@@ -1,6 +1,5 @@
 node_modules/
 dist/
-out/
 
 ai_server/m2m100-1.2b-ct2/model.bin
 ai_server/m2m100_418/model.bin
