@@ -1,0 +1,73 @@
+{
+    
+    "zh": "PP-OCRv5_server_rec",
+    "ja": "PP-OCRv5_server_rec",
+  
+    "en": "en_PP-OCRv5_mobile_rec",
+  
+    "ko": "korean_PP-OCRv5_mobile_rec",
+
+    "af": "latin_PP-OCRv5_mobile_rec",
+    "az": "latin_PP-OCRv5_mobile_rec",
+    "bs": "latin_PP-OCRv5_mobile_rec",
+    "ca": "latin_PP-OCRv5_mobile_rec",
+    "cs": "latin_PP-OCRv5_mobile_rec",
+    "cy": "latin_PP-OCRv5_mobile_rec",
+    "da": "latin_PP-OCRv5_mobile_rec",
+    "de": "latin_PP-OCRv5_mobile_rec",
+    "es": "latin_PP-OCRv5_mobile_rec",
+    "et": "latin_PP-OCRv5_mobile_rec",
+    "fi": "latin_PP-OCRv5_mobile_rec",
+    "fr": "latin_PP-OCRv5_mobile_rec",
+    "ga": "latin_PP-OCRv5_mobile_rec",
+    "gl": "latin_PP-OCRv5_mobile_rec",
+    "hr": "latin_PP-OCRv5_mobile_rec",
+    "hu": "latin_PP-OCRv5_mobile_rec",
+    "id": "latin_PP-OCRv5_mobile_rec",
+    "is": "latin_PP-OCRv5_mobile_rec",
+    "it": "latin_PP-OCRv5_mobile_rec",
+    "lb": "latin_PP-OCRv5_mobile_rec",
+    "lt": "latin_PP-OCRv5_mobile_rec",
+    "lv": "latin_PP-OCRv5_mobile_rec",
+    "ms": "latin_PP-OCRv5_mobile_rec",
+    "nl": "latin_PP-OCRv5_mobile_rec",
+    "no": "latin_PP-OCRv5_mobile_rec",
+    "oc": "latin_PP-OCRv5_mobile_rec",
+    "pl": "latin_PP-OCRv5_mobile_rec",
+    "pt": "latin_PP-OCRv5_mobile_rec",
+    "ro": "latin_PP-OCRv5_mobile_rec",
+    "sk": "latin_PP-OCRv5_mobile_rec",
+    "sl": "latin_PP-OCRv5_mobile_rec",
+    "sq": "latin_PP-OCRv5_mobile_rec",
+    "sv": "latin_PP-OCRv5_mobile_rec",
+    "sw": "latin_PP-OCRv5_mobile_rec",
+    "tl": "latin_PP-OCRv5_mobile_rec",
+    "tr": "latin_PP-OCRv5_mobile_rec",
+    "uz": "latin_PP-OCRv5_mobile_rec",
+    "vi": "latin_PP-OCRv5_mobile_rec",
+
+    "ba": "cyrillic_PP-OCRv5_mobile_rec",
+    "be": "cyrillic_PP-OCRv5_mobile_rec",
+    "bg": "cyrillic_PP-OCRv5_mobile_rec",
+    "kk": "cyrillic_PP-OCRv5_mobile_rec",
+    "mk": "cyrillic_PP-OCRv5_mobile_rec",
+    "mn": "cyrillic_PP-OCRv5_mobile_rec",
+    "ru": "cyrillic_PP-OCRv5_mobile_rec",
+    "uk": "cyrillic_PP-OCRv5_mobile_rec",
+
+    "ar": "arabic_PP-OCRv5_mobile_rec",
+    "fa": "arabic_PP-OCRv5_mobile_rec",
+    "ps": "arabic_PP-OCRv5_mobile_rec",
+    "sd": "arabic_PP-OCRv5_mobile_rec",
+    "ur": "arabic_PP-OCRv5_mobile_rec",
+
+    "hi": "devanagari_PP-OCRv5_mobile_rec",
+    "mr": "devanagari_PP-OCRv5_mobile_rec",
+    "ne": "devanagari_PP-OCRv5_mobile_rec",
+
+    "el": "el_PP-OCRv5_mobile_rec",
+
+    "th": "th_PP-OCRv5_mobile_rec",
+
+    "ta": "ta_PP-OCRv5_mobile_rec"
+}

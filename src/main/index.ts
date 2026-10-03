@@ -1,0 +1,156 @@
+import { app, BrowserWindow, screen, session, ipcMain, desktopCapturer } from 'electron'
+import {promises as fs} from "fs";
+import { join } from 'path'
+import editLanguages from './Data/editLanguages';
+let subWindow: BrowserWindow | null = null;
+let win : BrowserWindow | null = null
+let quality : string = "fast";
+
+function createWindow() : void {
+  //Creates the session
+  session.defaultSession.setDisplayMediaRequestHandler(
+    async (_request, callback) => {
+      //Tells the desktop that it wants to look
+      const sources = await desktopCapturer.getSources({
+        types: ["screen"],
+      });
+
+      //Automatically captures the first monitor
+      callback({
+        video: sources[0],
+      });
+    }
+  )
+  //Creates the window
+   win = new BrowserWindow({
+    width: 600,
+    height: 600,
+    frame: false,
+    transparent: true,
+    resizable: true,
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      contextIsolation: true,
+      nodeIntegration: true
+    }
+  })
+  //win?.webContents.openDevTools();
+
+  win?.setAlwaysOnTop(true);
+  //Loads the file
+  win.loadFile(join(__dirname, "../renderer/index.html"));
+ 
+  //win.webContents.toggleDevTools();
+  ipcMain.handle("screenSize", async(_event)=>{
+    if (!win) return
+    const windowBounds = win.getContentBounds();
+    const currentDisplay = screen.getDisplayMatching(windowBounds);
+
+    const json = {
+      "screenWidth": currentDisplay.bounds.width,
+      "screenHeight": currentDisplay.bounds.height,
+      "screenX": currentDisplay.bounds.x,
+      "screenY": currentDisplay.bounds.y,
+      "windowX": windowBounds.x,
+      "windowY": windowBounds.y,
+      "windowWidth": windowBounds.width,
+      "windowHeight": windowBounds.height,
+    }
+    return json;
+  })
+
+}
+
+ipcMain.on("showSubTextScreen", ()=>{
+    //Subtitle window
+  subWindow = new BrowserWindow({
+    width: 500,
+    height: 300,
+    frame: false,
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      sandbox: false
+    }
+  })
+subWindow?.setAlwaysOnTop(true);
+subWindow.loadFile(join(__dirname,  "../renderer/index.html"), {hash: "/SeperateText"});
+  //subWindow.webContents.openDevTools();
+  subWindow.on("closed", ()=>{
+    subWindow = null;
+  })
+})
+
+
+ipcMain.on("sendText", (_event, message : string)=> {
+  subWindow?.webContents.send("retrieveText", message)
+})
+
+
+ipcMain.on("qualitySettings", (_event, q : string)=>{
+  console.log("SENT");
+  quality = q;
+})
+
+ipcMain.on("closeWindow", (event)=>{
+    BrowserWindow.fromWebContents(event.sender)?.close();
+})
+
+ipcMain.on("changeLanguages", async (_event, lan1 : string, lan2 : string)=>{
+  await editLanguages(lan1, lan2);
+})
+
+ipcMain.handle("readLanguages", async(_event)=>{
+  const file = await fs.readFile("src/main/Data/languages.json", "utf8");
+  return JSON.parse(file);
+})
+
+ipcMain.handle("getCameraVersion", async(_event)=>{
+  const file = await fs.readFile("src/main/Data/SubScanSettings.json", "utf8");
+  const getSettings = JSON.parse(file);
+  return getSettings["type_of_lens"];
+})
+
+
+ipcMain.handle("getText", async(_event, image : ArrayBuffer, lan1 : string, lan2 : string)=>{
+  try
+  {
+    //Gets the data type
+    
+    console.log("This is the quality " + quality)
+    const formData = new FormData();
+    const newImage = new Blob([image], {"type": "image/png"});
+    formData.append("image", newImage, "screenshot.png");
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+    formData.append("quality", quality);
+
+    const response = await fetch("http://localhost:8000/determine", {
+      method: "POST",
+      body: formData
+    });
+
+    if(!response.ok)
+    {
+      throw new Error(await response.text());
+    }
+    else
+    {
+      const data = await response.json();
+      return data["results"];
+    }
+  }
+  catch(err)
+  {
+    console.log(err);
+  }
+})
+
+ipcMain.on("backToHome", async(_event)=>{
+  win?.webContents.send("backToMainScreen");
+  //win?.loadFile(join(__dirname,  "../renderer/index.html"), {hash: "/Home"});
+  subWindow?.close();
+})
+
+
+
+app.whenReady().then(() => createWindow());

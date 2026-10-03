@@ -1,0 +1,84 @@
+import { contextBridge, ipcRenderer } from 'electron'
+import { electronAPI } from '@electron-toolkit/preload'
+
+// Custom APIs for renderer
+const api = {
+  //Closes the window
+  closeWindow (): void {
+    ipcRenderer.send("closeWindow");
+  },
+
+  showSubTextScreen() : void {
+    ipcRenderer.send("showSubTextScreen")
+  },
+  
+  sendText(message : string) : void {
+    ipcRenderer.send("sendText", message)
+  },
+
+  onRetrieveText: (callback: (text: string) => void) => {
+      ipcRenderer.on("retrieveText", (_, text) => {
+        callback(text);
+      });
+  },
+  backToMainScreen: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("backToMainScreen", () => {
+      listener();
+    });
+    
+    return () => {
+      ipcRenderer.removeListener("backToMainScreen", listener);
+    };
+  },
+
+  //Edits the language
+  changeLanguages (lan1 : string, lan2: string): void {
+    ipcRenderer.send("changeLanguages", lan1, lan2);
+  },
+
+  //Read the language
+  readLanguages() : Promise<string> {
+    return ipcRenderer.invoke("readLanguages");
+  },
+  //Gets the camera version
+  getCameraVersion() : Promise<string> {
+    return ipcRenderer.invoke("getCameraVersion");
+  },
+
+  //Screen size
+  screenSize() : Promise<JSON> {
+    return ipcRenderer.invoke("screenSize");
+  },
+
+  //Returns the text that the screen reads
+  getTextResults(image : ArrayBuffer, lan : string, lan2 : string) : Promise<string> {
+    return ipcRenderer.invoke('getText', image, lan, lan2);
+  },
+  //Send quality string
+  qualitySettings(quality: string){
+    ipcRenderer.send("qualitySettings", quality)
+  },
+  
+  backToHome()
+  {
+    ipcRenderer.send("backToHome");
+  }
+}
+
+// Use `contextBridge` APIs to expose Electron APIs to
+// renderer only if context isolation is enabled, otherwise
+// just add to the DOM global.
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('api', api)
+  } catch (error) {
+    console.error(error)
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronAPI
+  // @ts-ignore (define in dts)
+  window.api = api
+}
