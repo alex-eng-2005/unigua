@@ -1,7 +1,7 @@
 import "../../assets/Subtitles/Subtitles.css"
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom";
-
+//let counter = 0;
 export default function Subtitles()
 {
     
@@ -90,17 +90,18 @@ export default function Subtitles()
                 //This ensures that an image is created
                 canvas.toBlob(async (blob : Blob | null)=>{
                     if(!blob) return;
+                    
                     //Checks if we are on pixel mode
-                    if(checkCameraVersion == "auto_scanner" ||
-                      (checkCameraVersion == "subtitles" && findDifference(prevPixels, getPixels)))
+                    if(findDifference(prevPixels, getPixels))
                     {
                         const imageArrayBuffer = await blob.arrayBuffer();
                         const getMessage = await window.api.getTextResults(imageArrayBuffer, readLanguages["lan1"], readLanguages["lan2"]);
                         pixels.current = getPixels;
                         window.api.sendText(getMessage)
                     }
+                    
                     /*
-                    if(checkCameraVersion == "scanner")
+                    if(counter == 1)
                     {
                         const blobURL = URL.createObjectURL(blob);
                         const link = document.createElement("a");
@@ -110,11 +111,12 @@ export default function Subtitles()
                         //Clean up
                         URL.revokeObjectURL(blobURL);
                     }
-                        */
+                    */
                         
-                    
-                    //Sleeps for 400ms
-                    await sleep(150);
+                        
+                    //counter += 1
+                    //Sleeps for 800ms
+                    await sleep(800);
                     requestAnimationFrame(getCanvas);
                 }, "image/png")
                 

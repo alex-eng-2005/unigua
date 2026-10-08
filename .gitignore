@@ -3,6 +3,7 @@ dist/
 
 ai_server/m2m100-1.2b-ct2/model.bin
 ai_server/m2m100_418/model.bin
+ai_server/madlad400-3b-ct2-int8/
 ai_server/__pycache__/
 *.pyc
 
