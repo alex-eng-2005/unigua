@@ -15143,10 +15143,12 @@ function SeperateText() {
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "settings", onClick: () => navigate("/settings"), children: "Settings" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "home", onClick: () => window.api.backToHome(), children: "Home" }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { id: "qualityFeatures", value: quality, onChange: sendQuality, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "fast", children: "fast" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "concise", children: "concise" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "deep", children: "deep" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "fast", children: "Fast" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "concise", children: "Concise" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "deep", children: "Deep" })
     ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("label", { htmlFor: "grammar-mode", children: "Grammar Mode" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "checkbox", id: "grammar-mode", name: "grammar", role: "switch" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: text })
   ] }) });
 }

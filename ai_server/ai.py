@@ -70,7 +70,7 @@ model_subtitle_name = "facebook/m2m100_418M"
 tokenizer_deep = AutoTokenizer.from_pretrained(model_deep_name)
 tokenizer_scanner = M2M100Tokenizer.from_pretrained(model_scanner_name)
 tokenizer_subtitle = M2M100Tokenizer.from_pretrained(model_subtitle_name)
-language_model = pipeline("text-generation","Qwen/Qwen3-0.6B")
+language_model = pipeline("text-generation","Qwen/Qwen3-1.7B")
 
 
 #Translator for loading the M2M100 Model
@@ -174,19 +174,14 @@ def translation_results(text, setting, lang_1, lang_2):
         #Settings option
         match(setting):
             #Fast settings
-            case "fast":
-                return translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 2)
+            case "Fast":
+                return translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 4)
             #Consice settings
-            case "concise":
+            case "Concise":
                 return translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4)
             #Deep settings
-            case "deep":
-                return deep_translationAI(text, lang_2, tokenizer_deep, model_deep, 1)
-            #Error check
-            case "_":
-                return "N/A"
-    #Returns empty if not found
-    return ""
+            case "Deep":
+                return deep_translationAI(text, lang_2, tokenizer_deep, model_deep, 2)
     
 #Reads the translated json
 def lang():
@@ -281,23 +276,21 @@ async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: 
     #Sets the image
     img = await setImage(image)
     end_time = time.perf_counter()
-    print("Setting languages and images: " (end_time - startTime))
+    print("Setting languages and images: ", (end_time - startTime))
     
     startTime2 = time.perf_counter()
     #The results predict the image to find out what it is saying
     text = getPredictedLanguage(lang_1, img, False)
-    fixed_text = fix_language(text)
+    #text = fix_language(text)
     end_time2 = time.perf_counter()
     print("TEXT: ", (end_time2 - startTime2))
     
     startTime3 = time.perf_counter()
     #Returns the results
-    results = translation_results(fixed_text, quality, lang_1, lang_2)
+    results = translation_results(text, quality, lang_1, lang_2)
     #How long it recorded
     end_time3 = time.perf_counter()
     print("Translation: ", (end_time3 - startTime3))
     
     #Test code
-    #idea = input("This is what it sees: ")
-    print("TIME: ", (end_time - startTime))
     return {"language_scanned": text, "results": results}
