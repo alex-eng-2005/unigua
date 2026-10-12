@@ -44,11 +44,14 @@ const api = {
   },
   //Returns the text that the screen reads
   getTextResults(image, lan, lan2) {
-    return electron.ipcRenderer.invoke("getText", image, lan, lan2);
+    return electron.ipcRenderer.invoke("getTextResults", image, lan, lan2);
   },
   //Send quality string
   qualitySettings(quality) {
     electron.ipcRenderer.send("qualitySettings", quality);
+  },
+  grammarSettings(grammar) {
+    electron.ipcRenderer.send("grammarSettings", grammar);
   },
   backToHome() {
     electron.ipcRenderer.send("backToHome");

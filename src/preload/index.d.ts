@@ -10,6 +10,7 @@ interface API {
   screenSize() : Promise<JSON>;
   getCameraVersion() : Promise<string>;
   qualitySettings(quality : string) : Promise<String>;
+  grammarSettings(grammar : boolean) : Promise<String>;
   getTextResults(image : ArrayBuffer, lan : string, lan2 : string);
   backToHome() : void;
   backToMainScreen(callback: () => void) : void;

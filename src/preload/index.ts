@@ -53,11 +53,16 @@ const api = {
 
   //Returns the text that the screen reads
   getTextResults(image : ArrayBuffer, lan : string, lan2 : string) : Promise<string> {
-    return ipcRenderer.invoke('getText', image, lan, lan2);
+    return ipcRenderer.invoke('getTextResults', image, lan, lan2);
   },
   //Send quality string
   qualitySettings(quality: string){
     ipcRenderer.send("qualitySettings", quality)
+  },
+
+  grammarSettings(grammar: boolean)
+  {
+    ipcRenderer.send("grammarSettings", grammar)
   },
   
   backToHome()

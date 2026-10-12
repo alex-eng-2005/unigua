@@ -1,5 +1,4 @@
 from io import BytesIO
-
 from PIL import Image
 import cv2
 import numpy as np
@@ -7,10 +6,11 @@ import json
 import ctranslate2
 import time
 import tesserocr
+import torch
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from paddleocr import PaddleOCR, PaddleOCRVL
-from transformers import AutoTokenizer, M2M100Tokenizer, pipeline
+from transformers import AutoTokenizer, M2M100Tokenizer, pipeline, AutoModelForSeq2SeqLM
 
 #Reads the ocrSupportedModel
 with open("./ocrSupport.json", "r", encoding="utf-8") as f:
@@ -61,24 +61,20 @@ ocr6_model = PaddleOCR(device="cpu", text_detection_model_name="PP-OCRv6_small_d
 #API to connect from the API
 app = FastAPI()
 #Models name
-model_deep_name =  "google/madlad400-3b-mt"
 model_scanner_name = "facebook/m2m100_1.2B"
 model_subtitle_name = "facebook/m2m100_418M"
 
 
 #A tokenizer to split the text into different tokens
-tokenizer_deep = AutoTokenizer.from_pretrained(model_deep_name)
 tokenizer_scanner = M2M100Tokenizer.from_pretrained(model_scanner_name)
 tokenizer_subtitle = M2M100Tokenizer.from_pretrained(model_subtitle_name)
 language_model = pipeline("text-generation","Qwen/Qwen3-1.7B")
-
+grammar_model = pipeline("text-generation", "Qwen/Qwen3-2B")
 
 #Translator for loading the M2M100 Model
 model_translator = ctranslate2.Translator("./m2m100_418", device="cpu", compute_type="int8")
 #The model with the pretrained data
 model_scanner = ctranslate2.Translator("./m2m100-1.2b-ct2", device="cpu", compute_type="int8")
-#Deep Model
-model_deep = ctranslate2.Translator(".//madlad400-3b-ct2-int8", device="cpu", compute_type="int8")
 
 #Checks what should be translated
 def getPredictedLanguage(lan, img, isFast=True):
@@ -135,42 +131,13 @@ def translationAI(text, source, target, tokenizer, model, beam_size):
     #Decodes the ids
     return tokenizer.decode(output_ids, skip_special_tokens=True)
 
-#Translates Google madlab model
-def deep_translationAI(text, target, tokenizer, model, beam_size):
-    #Our target token
-    target_token = f"<2{target}>"
-    
-    #Source ids
-    source_ids = tokenizer.encode(text, add_special_tokens=False)
-    #Convert the text into tokens
-    source_tokens = tokenizer.convert_ids_to_tokens(source_ids)
-    
-    #Insert the target token before the input text
-    source_tokens.insert(0, target_token)
-    
-    #Translate
-    results = model.translate_batch([source_tokens], 
-                                    beam_size=beam_size, 
-                                    max_decoding_length=256,
-                                    repetition_penalty=1.1,
-                                    no_repeat_ngram_size=3)
-
-    #Output tokens
-    output_tokens = results[0].hypotheses[0]
-    
-    #Output ids
-    output_ids = tokenizer.convert_tokens_to_ids(output_tokens)
-    
-    #Returns the decode version
-    return tokenizer.decode(output_ids, skip_special_tokens=True)
-
 
 #Translation options
-def translation_results(text, setting, lang_1, lang_2):
+def translation_results(text, setting, lang_1, lang_2, lan2):
     #Checks if the length of the text is greater than 0
     if len(text) > 0:
-        print("This text is larger than 0")
-        print(setting)
+        #print("This text is larger than 0")
+        #print(setting)
         #Settings option
         match(setting):
             #Fast settings
@@ -181,7 +148,9 @@ def translation_results(text, setting, lang_1, lang_2):
                 return translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4)
             #Deep settings
             case "Deep":
-                return deep_translationAI(text, lang_2, tokenizer_deep, model_deep, 2)
+                new_translation = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4)
+                print("BEFORE QWEN:",new_translation)
+                return fix_grammar(new_translation, lan2)
     
 #Reads the translated json
 def lang():
@@ -206,10 +175,46 @@ def translatesInfo(results):
                 text_results.append(text)
     #A sentence loops around
     sentence = " ".join(text_results)
-    print("Word Give: ", sentence)
+    print("Word Giveen: ", sentence)
     #Returns the sentence
     return sentence
     
+def fix_grammar(text, target_language):
+    prompt = prompt = [
+        {
+            "role": "system",
+            "content": f"""You are a professional translator.
+
+            Translate the user's text into {target_language}.
+
+            Rules:
+            - Output only the translation in {target_language}.
+            - Do not output English unless English is the target language.
+            - Preserve the original meaning, tone, names, numbers, and formatting.
+            - Make the translation natural and grammatically correct.
+            - Do not explain your reasoning.
+            - Do not use <think> tags.
+            - Return only the translated text."""
+        },
+        {
+            "role": "user",
+            "content": text
+        }
+    ]
+    grammar_language = grammar_model(prompt, 
+                                     max_new_tokens=128,  
+                                    do_sample=False)
+    #Generated language
+    generated_language = grammar_language[0]["generated_text"]
+    
+    #Checks if it is a instance of a list
+    if isinstance(generated_language, list):
+        final_langauge = generated_language[-1]["content"]
+    else:
+        final_langauge = generated_language
+    #Returns the language itself
+    return final_langauge.strip()
+
 def fix_language(text):
     prompt = [{"role":"system", 
               "content": f"""You are an OCR correction and cleanup tool.
@@ -249,9 +254,9 @@ def fix_language(text):
                     """
                 }]
     fixed_language = language_model(prompt, 
-                                    max_new_tokens=40,  
+                                    max_new_tokens=max(64, len(text.split()) * 3),  
                                     do_sample=False)
-    return fixed_language[0]["generated_text"][-1]["content"]
+    return fixed_language[0]["generated_text"][-1]["content"].strip()
 
 async def setImage(image : UploadFile = File(...)):
     #Reads uploaded image bytes
@@ -263,9 +268,13 @@ async def setImage(image : UploadFile = File(...)):
     return img
 
 @app.post("/determine")
-async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: str = Form(...), quality: str = Form(...)):
-    print("Starting...")
-    startTime = time.perf_counter()
+async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: str = Form(...), quality: str = Form(...), grammar: str = Form(...)):
+    #print(grammar)
+    #First, we set the transition function
+    want_grammar = True if grammar == "true" else False
+    
+    #print("Starting...")
+    #startTime = time.perf_counter()
     #Json
     user_lan = lang() 
     #Language 1
@@ -275,22 +284,16 @@ async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: 
     
     #Sets the image
     img = await setImage(image)
-    end_time = time.perf_counter()
-    print("Setting languages and images: ", (end_time - startTime))
     
-    startTime2 = time.perf_counter()
     #The results predict the image to find out what it is saying
     text = getPredictedLanguage(lang_1, img, False)
-    #text = fix_language(text)
-    end_time2 = time.perf_counter()
-    print("TEXT: ", (end_time2 - startTime2))
     
-    startTime3 = time.perf_counter()
-    #Returns the results
-    results = translation_results(text, quality, lang_1, lang_2)
-    #How long it recorded
-    end_time3 = time.perf_counter()
-    print("Translation: ", (end_time3 - startTime3))
+    #Checks if the grammar needs to be made before the translation
+    if want_grammar:
+        text = fix_language(text)
+    
+    results = translation_results(text, quality, lang_1, lang_2, lan2)
+    print("FINAL RESULTS: ", results)
     
     #Test code
     return {"language_scanned": text, "results": results}
