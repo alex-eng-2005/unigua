@@ -94,10 +94,11 @@ export default function Subtitles()
                     //Checks if we are on pixel mode
                     if(findDifference(prevPixels, getPixels))
                     {
+                        //Finds the pixel image
                         const imageArrayBuffer = await blob.arrayBuffer();
                         const getMessage = await window.api.getTextResults(imageArrayBuffer, readLanguages["lan1"], readLanguages["lan2"]);
                         pixels.current = getPixels;
-                        window.api.sendText(getMessage)
+                        window.api.sendText(getMessage);
                     }
                     
                     /*
@@ -115,8 +116,8 @@ export default function Subtitles()
                         
                         
                     //counter += 1
-                    //Sleeps for 800ms
-                    await sleep(800);
+                    //Sleeps for 3000ms
+                    await sleep(3000);
                     requestAnimationFrame(getCanvas);
                 }, "image/png")
                 

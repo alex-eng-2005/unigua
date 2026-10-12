@@ -4,7 +4,8 @@ import { join } from 'path'
 import editLanguages from './Data/editLanguages';
 let subWindow: BrowserWindow | null = null;
 let win : BrowserWindow | null = null
-let quality : string = "fast";
+let quality : string = "Fast";
+let grammar : boolean = false;
 
 function createWindow() : void {
   //Creates the session
@@ -87,8 +88,12 @@ ipcMain.on("sendText", (_event, message : string)=> {
 
 
 ipcMain.on("qualitySettings", (_event, q : string)=>{
-  console.log("SENT");
   quality = q;
+})
+
+
+ipcMain.on("grammarSettings", (_event, g : boolean)=>{
+  grammar = g;
 })
 
 ipcMain.on("closeWindow", (event)=>{
@@ -111,19 +116,22 @@ ipcMain.handle("getCameraVersion", async(_event)=>{
 })
 
 
-ipcMain.handle("getText", async(_event, image : ArrayBuffer, lan1 : string, lan2 : string)=>{
+ipcMain.handle("getTextResults", async(_event, image : ArrayBuffer, lan1 : string, lan2 : string)=>{
   try
   {
-    //Gets the data type
     
-    console.log("This is the quality " + quality)
+    //Gets the data type
     const formData = new FormData();
     const newImage = new Blob([image], {"type": "image/png"});
+    //Quality
     formData.append("image", newImage, "screenshot.png");
     formData.append("lan1", lan1);
     formData.append("lan2", lan2);
     formData.append("quality", quality);
-
+    formData.append("grammar", String(grammar));
+    //Loading Screen
+    subWindow?.webContents.send("retrieveText", ".....")
+    //Gets the response
     const response = await fetch("http://localhost:8000/determine", {
       method: "POST",
       body: formData

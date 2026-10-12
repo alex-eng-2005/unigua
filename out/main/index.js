@@ -17,7 +17,8 @@ async function editLanguages(lan1, lan2) {
 }
 let subWindow = null;
 let win = null;
-let quality = "fast";
+let quality = "Fast";
+let grammar = false;
 function createWindow() {
   electron.session.defaultSession.setDisplayMediaRequestHandler(
     async (_request, callback) => {
@@ -80,8 +81,10 @@ electron.ipcMain.on("sendText", (_event, message) => {
   subWindow?.webContents.send("retrieveText", message);
 });
 electron.ipcMain.on("qualitySettings", (_event, q) => {
-  console.log("SENT");
   quality = q;
+});
+electron.ipcMain.on("grammarSettings", (_event, g) => {
+  grammar = g;
 });
 electron.ipcMain.on("closeWindow", (event) => {
   electron.BrowserWindow.fromWebContents(event.sender)?.close();
@@ -98,15 +101,16 @@ electron.ipcMain.handle("getCameraVersion", async (_event) => {
   const getSettings = JSON.parse(file);
   return getSettings["type_of_lens"];
 });
-electron.ipcMain.handle("getText", async (_event, image, lan1, lan2) => {
+electron.ipcMain.handle("getTextResults", async (_event, image, lan1, lan2) => {
   try {
-    console.log("This is the quality " + quality);
     const formData = new FormData();
     const newImage = new Blob([image], { "type": "image/png" });
     formData.append("image", newImage, "screenshot.png");
     formData.append("lan1", lan1);
     formData.append("lan2", lan2);
     formData.append("quality", quality);
+    formData.append("grammar", String(grammar));
+    subWindow?.webContents.send("retrieveText", ".....");
     const response = await fetch("http://localhost:8000/determine", {
       method: "POST",
       body: formData

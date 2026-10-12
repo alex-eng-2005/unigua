@@ -15085,7 +15085,7 @@ function Subtitles() {
             pixels.current = getPixels;
             window.api.sendText(getMessage);
           }
-          await sleep(800);
+          await sleep(3e3);
           requestAnimationFrame(getCanvas);
         }, "image/png");
       } else {
@@ -15128,11 +15128,16 @@ function Subtitles() {
 }
 function SeperateText() {
   const [text, setText] = reactExports.useState("");
-  const [quality, setQuality] = reactExports.useState("fast");
+  const [quality, setQuality] = reactExports.useState("Fast");
+  const [grammar, setGrammar] = reactExports.useState(false);
   const navigate = useNavigate();
   function sendQuality(e) {
     setQuality(e.target.value);
     window.api.qualitySettings(e.target.value);
+  }
+  function sendGrammar(e) {
+    setGrammar(e.target.checked);
+    window.api.grammarSettings(e.target.checked);
   }
   reactExports.useEffect(() => {
     window.api.onRetrieveText((newText) => {
@@ -15143,12 +15148,12 @@ function SeperateText() {
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "settings", onClick: () => navigate("/settings"), children: "Settings" }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "home", onClick: () => window.api.backToHome(), children: "Home" }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("select", { id: "qualityFeatures", value: quality, onChange: sendQuality, children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "fast", children: "Fast" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "concise", children: "Concise" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "deep", children: "Deep" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "Fast", children: "Fast" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "Concise", children: "Concise" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("option", { value: "Deep", children: "Deep" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("label", { htmlFor: "grammar-mode", children: "Grammar Mode" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "checkbox", id: "grammar-mode", name: "grammar", role: "switch" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "checkbox", id: "grammar-mode", name: "grammar", role: "switch", onChange: sendGrammar }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: text })
   ] }) });
 }
