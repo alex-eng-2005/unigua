@@ -5,7 +5,6 @@ import { useEffect, useState, type ChangeEvent } from "react";
 export default function SeperateText() {
     const [text, setText] = useState("");
     const [quality, setQuality] = useState("Fast");
-    const [grammar, setGrammar] = useState(false);
     const navigate = useNavigate();
 
     function sendQuality(e: ChangeEvent<HTMLSelectElement>) {
@@ -14,7 +13,6 @@ export default function SeperateText() {
     }
 
     function sendGrammar(e: ChangeEvent<HTMLInputElement>) {
-        setGrammar(e.target.checked);
         window.api.grammarSettings(e.target.checked);
     }
 

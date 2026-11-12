@@ -101,7 +101,28 @@ electron.ipcMain.handle("getCameraVersion", async (_event) => {
   const getSettings = JSON.parse(file);
   return getSettings["type_of_lens"];
 });
-electron.ipcMain.handle("getTextResults", async (_event, image, lan1, lan2) => {
+electron.ipcMain.handle("getTextResults", async (_event, text, lan1, lan2) => {
+  try {
+    const formData = new FormData();
+    formData.append("text", text);
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+    const response = await fetch("http://localhost:8000/getTextResult", {
+      method: "POST",
+      body: formData
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    } else {
+      const data = await response.json();
+      return data["results"];
+    }
+  } catch (err) {
+    console.log(err);
+    return void 0;
+  }
+});
+electron.ipcMain.handle("getTextImageResults", async (_event, image, lan1, lan2) => {
   try {
     const formData = new FormData();
     const newImage = new Blob([image], { "type": "image/png" });
@@ -123,6 +144,49 @@ electron.ipcMain.handle("getTextResults", async (_event, image, lan1, lan2) => {
     }
   } catch (err) {
     console.log(err);
+    return void 0;
+  }
+});
+electron.ipcMain.handle("getDocxForTranslation", async (_event, file, lan1, lan2) => {
+  try {
+    const formData = new FormData();
+    const getDocOrDocx = new Blob([file], { "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    formData.append("file_data", getDocOrDocx, "document.docx");
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+    const response = await fetch("http://localhost:8000/docxTranslation", {
+      method: "POST",
+      body: formData
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    } else {
+      return await response.arrayBuffer();
+    }
+  } catch (err) {
+    console.log(err);
+    return void 0;
+  }
+});
+electron.ipcMain.handle("getPdfForTranslation", async (_event, file, lan1, lan2) => {
+  try {
+    const formData = new FormData();
+    const getDocOrDocx = new Blob([file], { "type": "application/pdf" });
+    formData.append("file_data", getDocOrDocx, "document.pdf");
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+    const response = await fetch("http://localhost:8000/pdfTranslation", {
+      method: "POST",
+      body: formData
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    } else {
+      return await response.arrayBuffer();
+    }
+  } catch (err) {
+    console.log(err);
+    return void 0;
   }
 });
 electron.ipcMain.on("backToHome", async (_event) => {

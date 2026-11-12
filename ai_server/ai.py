@@ -1,16 +1,20 @@
 from io import BytesIO
 from PIL import Image
 import cv2
+import docx
+from fastapi.responses import StreamingResponse
 import numpy as np
 import json
 import ctranslate2
 import time
 import tesserocr
 import torch
+import fitz
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from paddleocr import PaddleOCR, PaddleOCRVL
 from transformers import AutoTokenizer, M2M100Tokenizer, pipeline, AutoModelForSeq2SeqLM
+from docx import Document
 
 #Reads the ocrSupportedModel
 with open("./ocrSupport.json", "r", encoding="utf-8") as f:
@@ -68,7 +72,6 @@ model_subtitle_name = "facebook/m2m100_418M"
 #A tokenizer to split the text into different tokens
 tokenizer_scanner = M2M100Tokenizer.from_pretrained(model_scanner_name)
 tokenizer_subtitle = M2M100Tokenizer.from_pretrained(model_subtitle_name)
-language_model = pipeline("text-generation","Qwen/Qwen3-1.7B")
 grammar_model = pipeline("text-generation", "Qwen/Qwen3-2B")
 
 #Translator for loading the M2M100 Model
@@ -113,7 +116,7 @@ def tesser(lan, img):
 
 
 #Translator to describe the langauge
-def translationAI(text, source, target, tokenizer, model, beam_size):
+def translationAI(text, source, target, tokenizer, model, beam_size, repetition_penalty):
     #Sets the source
     tokenizer.src_lang = source
     ##Convert the sentence into tokens
@@ -123,7 +126,7 @@ def translationAI(text, source, target, tokenizer, model, beam_size):
     #Tells the M2M100 model what language to decode
     target_prefix = [tokenizer.lang_code_to_token[target]]
     #Does the translation with the source tokens, target language, and to use fast greedy decoding
-    results = model.translate_batch([source_tokens], target_prefix=[target_prefix], beam_size=beam_size)
+    results = model.translate_batch([source_tokens], target_prefix=[target_prefix], beam_size=beam_size, repetition_penalty=repetition_penalty)
     #Gets the tokens
     output_tokens = results[0].hypotheses[0][1:]
     #Convert the tokens back to an id
@@ -142,14 +145,13 @@ def translation_results(text, setting, lang_1, lang_2, lan2):
         match(setting):
             #Fast settings
             case "Fast":
-                return translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 4)
+                return translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 4, 0)
             #Consice settings
             case "Concise":
-                return translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4)
+                return translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 0)
             #Deep settings
             case "Deep":
-                new_translation = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4)
-                print("BEFORE QWEN:",new_translation)
+                new_translation = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 0)
                 return fix_grammar(new_translation, lan2)
     
 #Reads the translated json
@@ -175,7 +177,7 @@ def translatesInfo(results):
                 text_results.append(text)
     #A sentence loops around
     sentence = " ".join(text_results)
-    print("Word Giveen: ", sentence)
+    print("Word Given: ", sentence)
     #Returns the sentence
     return sentence
     
@@ -215,49 +217,6 @@ def fix_grammar(text, target_language):
     #Returns the language itself
     return final_langauge.strip()
 
-def fix_language(text):
-    prompt = [{"role":"system", 
-              "content": f"""You are an OCR correction and cleanup tool.
-                            Your task is to clean the OCR text while preserving the original source material.
-
-                            Rules:
-                            1. Return only the cleaned text. Do not explain your changes.
-                            2. Preserve the original language, meaning, wording, punctuation, names, numbers, and line order.
-                            3. Correct only obvious OCR errors, such as:
-                            - duplicated words or lines
-                            - broken characters
-                            - random symbols
-                            - incomplete fragments caused by OCR
-                            - obvious spacing errors
-                            4. Remove text only when it is clearly:
-                            - meaningless OCR gibberish
-                            - a duplicated OCR segment
-                            - an isolated random character or symbol
-                            - a watermark, page number, button, filename, or interface text that is not part of the source
-                            5. Do not remove unusual words, slang, names, abbreviations, dialects, or sentences merely because they seem unfamiliar.
-                            6. Never invent missing words. If uncertain, keep the original text.
-                            7. Preserve line breaks and paragraph structure.
-                            8. Do not translate, summarize, define, or add commentary.
-
-                            Return only the cleaned source text."""
-                },
-                {
-                    "role":"user",
-                    "content": f"""
-                    Clean the OCR text below.
-
-                    <ocr_text>
-                    {text}
-                    </ocr_text>
-
-                    Return only the cleaned source text.
-                    """
-                }]
-    fixed_language = language_model(prompt, 
-                                    max_new_tokens=max(64, len(text.split()) * 3),  
-                                    do_sample=False)
-    return fixed_language[0]["generated_text"][-1]["content"].strip()
-
 async def setImage(image : UploadFile = File(...)):
     #Reads uploaded image bytes
     image_bytes = await image.read()
@@ -267,14 +226,167 @@ async def setImage(image : UploadFile = File(...)):
     img = cv2.imdecode(np_buffer, cv2.IMREAD_COLOR)
     return img
 
+@app.post("/pdfTranslation")
+async def pdfTranslation(file_data: UploadFile = File(...), lan1 : str = Form(...), lan2 : str = Form(...)):
+    #Json
+    user_lan = lang() 
+    #Language 1
+    lang_1 = user_lan[lan1]
+    #Language 2
+    lang_2 = user_lan[lan2]
+    #Bytes
+    pdf_bytes = await file_data.read()
+    #Gets the fitz
+    pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
+    
+    #For each page in the pdf
+    for page in pdf:
+        replacements = []
+        #Blocks
+        blocks = page.get_text("dict")["blocks"]
+        for block in blocks:
+            if "lines" not in block:
+                continue
+            #Line
+            for line in block["lines"]:
+                #Span
+                spans = line["spans"]
+                if not spans:
+                    continue
+                #Checks for the original
+                original = "".join(s["text"] for s in spans)
+                print(original)
+                #Checks if there is not a original strip
+                if not original.strip():
+                    continue
+                
+                #Translates the text
+                translated = translationAI(original, lang_1, lang_2, tokenizer_scanner, model_scanner, 8, 1.1)
+                #Rectangle
+                rect = fitz.Rect(line["bbox"])
+                #font size
+                font_size = spans[0]["size"]
+                #Color
+                color_value = spans[0]["color"]
+                if isinstance(color_value, tuple):
+                    rgb = tuple(value / 255 if value > 1 else value for value in color_value)
+                else:
+                    rgb = (
+                        ((color_value >> 16) & 255) / 255,
+                        ((color_value >> 8) & 255) / 255,
+                        (color_value & 255) / 255
+                    )
+                            
+                replacements.append({
+                    "rect": rect,
+                    "text": translated,
+                    "size": font_size,
+                    "color": rgb
+                })
+                
+        #Remove the original text
+        for item in replacements:
+            page.add_redact_annot(
+                item["rect"],
+                fill=False,
+                cross_out=False
+            )
+            
+        #Replacements
+        if replacements:
+            page.apply_redactions(
+                images=0,
+                graphics=0,
+                text=0
+            )
+        #Insert translated text
+        for item in replacements:
+            rect = item["rect"]
+            
+            #Allow extra vertical space
+            target = fitz.Rect(
+                rect.x0,
+                rect.y0,
+                rect.x1,
+                rect.y1 + 45
+            )
+            
+            #Results insert
+            result = page.insert_textbox(
+                target,
+                item["text"],
+                fontsize=item["size"],
+                fontname="helv",
+                color=item["color"]
+            )
+
+            if result < 0:
+                print("Text did not fit:", item["text"])
+    #Saves the doc as an output stream
+    output_stream = BytesIO()
+    pdf.save(output_stream)
+    output_stream.seek(0)
+    
+    #Returns the pdf back to the api
+    return StreamingResponse(
+        output_stream,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "attachment; filename=translated.pdf"
+        }
+    )
+                    
+@app.post("/docxTranslation")
+async def docxTranslation(file_data: UploadFile = File(...), lan1 : str = Form(...), lan2 : str = Form(...)):
+    #Json
+    user_lan = lang() 
+    #Language 1
+    lang_1 = user_lan[lan1]
+    #Language 2
+    lang_2 = user_lan[lan2]
+    #Bytes
+    file_bytes = await file_data.read()
+    #Transforms 
+    doc_stream = BytesIO(file_bytes)
+    #File
+    doc = Document(doc_stream)
+    
+    #Edits the paragraph with the translated version
+    for paragraph in doc.paragraphs:
+        print(paragraph.text)
+        paragraph.text = translationAI(paragraph.text, lang_1, lang_2, tokenizer_scanner, model_scanner, 8, 1.1)
+        
+    #Saves the doc as an output stream
+    output_stream = BytesIO()
+    doc.save(output_stream)
+    output_stream.seek(0)
+    
+    #Returns the doc back to the api
+    return StreamingResponse(
+        output_stream,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": "attachment; filename=translated.docx"
+        }
+    )
+
+@app.post("/getTextResult")
+async def getTextResult(text : str = Form(...), lan1 : str = Form(...), lan2 : str = Form(...)):
+    #Json
+    user_lan = lang() 
+    #Language 1
+    lang_1 = user_lan[lan1]
+    #Language 2
+    lang_2 = user_lan[lan2]
+    #Results from translation
+    results = translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 8, 1.1)
+    #Returns the translation
+    return {"results": results}
+
 @app.post("/determine")
 async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: str = Form(...), quality: str = Form(...), grammar: str = Form(...)):
-    #print(grammar)
     #First, we set the transition function
     want_grammar = True if grammar == "true" else False
-    
-    #print("Starting...")
-    #startTime = time.perf_counter()
     #Json
     user_lan = lang() 
     #Language 1
@@ -290,10 +402,10 @@ async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: 
     
     #Checks if the grammar needs to be made before the translation
     if want_grammar:
-        text = fix_language(text)
-    
+        text = fix_grammar(text, lang_1)
+        print(text)
+    #Results
     results = translation_results(text, quality, lang_1, lang_2, lan2)
-    print("FINAL RESULTS: ", results)
     
     #Test code
     return {"language_scanned": text, "results": results}

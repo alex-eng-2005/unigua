@@ -42,8 +42,7 @@ export default function Subtitles()
         const getScreenSizeInfo = await window.api.screenSize();
         //Reads the languages
         const readLanguages = await window.api.readLanguages();
-        //Checks what version we are on right now
-        const checkCameraVersion : string = await window.api.getCameraVersion();
+        
         //Checks if the video and canvas exists
         if(video && canvas)
         {
@@ -96,26 +95,11 @@ export default function Subtitles()
                     {
                         //Finds the pixel image
                         const imageArrayBuffer = await blob.arrayBuffer();
-                        const getMessage = await window.api.getTextResults(imageArrayBuffer, readLanguages["lan1"], readLanguages["lan2"]);
+                        const getMessage = await window.api.getTextImageResults(imageArrayBuffer, readLanguages["lan1"], readLanguages["lan2"]);
                         pixels.current = getPixels;
                         window.api.sendText(getMessage);
                     }
-                    
-                    /*
-                    if(counter == 1)
-                    {
-                        const blobURL = URL.createObjectURL(blob);
-                        const link = document.createElement("a");
-                        link.href = blobURL;
-                        link.download = "screenshot.png";
-                        link.click();
-                        //Clean up
-                        URL.revokeObjectURL(blobURL);
-                    }
-                    */
-                        
-                        
-                    //counter += 1
+
                     //Sleeps for 3000ms
                     await sleep(3000);
                     requestAnimationFrame(getCanvas);
@@ -158,7 +142,6 @@ export default function Subtitles()
     }
     useEffect(()=>{
         const removeWindow = window.api.backToMainScreen(()=>{
-            console.log("ON")
             navigate("/")
         });
         
@@ -177,9 +160,3 @@ export default function Subtitles()
     </>
     );
 }
-
-/*
-      <div className="subtitlesText" style={{"display": "none"}}>
-            <p>{translatedText}</p>
-        </div>
-*/

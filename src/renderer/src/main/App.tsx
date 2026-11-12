@@ -3,6 +3,9 @@ import Home from "../components/Home/Home";
 import Settings from "../components/Settings/Settings";
 import Subtitles from "@renderer/components/Subtitles/Subtitles";
 import SeperateText from "@renderer/components/Subtitles/SeperateText";
+import LanguageConverter from "@renderer/components/Language_Converter/LanguageConverter";
+import DocAndDocxEditor from "@renderer/components/docAndDocxEditor/docAndDocxEditor";
+import PDFTranslator from "@renderer/components/PDFTranslator/PDFTranslator";
 function App(): React.JSX.Element {
   return (
     <HashRouter>
@@ -11,6 +14,11 @@ function App(): React.JSX.Element {
         <Route path="/settings" element={<Settings/>}></Route>
         <Route path="/subtitles" element={<Subtitles/>}></Route>
         <Route path="/SeperateText" element={<SeperateText/>}></Route>
+        <Route path="/languageConverter" element={<LanguageConverter/>}></Route>
+        <Route path="/docAndDocxEditor" element={<DocAndDocxEditor/>}></Route>
+        <Route path="/pdfTranslator" element={<PDFTranslator/>}></Route>
+        <Route path="/imageDownload" element={<PDFTranslator/>}></Route>
+        <Route path="/audioDownload" element={<PDFTranslator/>}></Route>
       </Routes>
     </HashRouter>
   )
