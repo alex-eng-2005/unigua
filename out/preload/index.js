@@ -42,17 +42,31 @@ const api = {
   screenSize() {
     return electron.ipcRenderer.invoke("screenSize");
   },
+  //Returns the text that the text reads
+  getTextResults(text, lan1, lan2) {
+    return electron.ipcRenderer.invoke("getTextResults", text, lan1, lan2);
+  },
   //Returns the text that the screen reads
-  getTextResults(image, lan, lan2) {
-    return electron.ipcRenderer.invoke("getTextResults", image, lan, lan2);
+  getTextImageResults(image, lan, lan2) {
+    return electron.ipcRenderer.invoke("getTextImageResults", image, lan, lan2);
+  },
+  //Doc for translation
+  getDocxForTranslation(file, lan, lan2) {
+    return electron.ipcRenderer.invoke("getDocxForTranslation", file, lan, lan2);
+  },
+  //Doc for translation
+  getPdfForTranslation(file, lan, lan2) {
+    return electron.ipcRenderer.invoke("getPdfForTranslation", file, lan, lan2);
   },
   //Send quality string
   qualitySettings(quality) {
     electron.ipcRenderer.send("qualitySettings", quality);
   },
+  //Grammar Settings
   grammarSettings(grammar) {
     electron.ipcRenderer.send("grammarSettings", grammar);
   },
+  //Back to home
   backToHome() {
     electron.ipcRenderer.send("backToHome");
   }

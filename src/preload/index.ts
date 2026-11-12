@@ -41,6 +41,7 @@ const api = {
   readLanguages() : Promise<string> {
     return ipcRenderer.invoke("readLanguages");
   },
+
   //Gets the camera version
   getCameraVersion() : Promise<string> {
     return ipcRenderer.invoke("getCameraVersion");
@@ -51,20 +52,39 @@ const api = {
     return ipcRenderer.invoke("screenSize");
   },
 
-  //Returns the text that the screen reads
-  getTextResults(image : ArrayBuffer, lan : string, lan2 : string) : Promise<string> {
-    return ipcRenderer.invoke('getTextResults', image, lan, lan2);
+  //Returns the text that the text reads
+  getTextResults(text : string, lan1 : string, lan2 : string) : Promise<String>
+  {
+    return ipcRenderer.invoke("getTextResults", text, lan1, lan2);
   },
+
+  //Returns the text that the screen reads
+  getTextImageResults(image : ArrayBuffer, lan : string, lan2 : string) : Promise<string> {
+    return ipcRenderer.invoke('getTextImageResults', image, lan, lan2);
+  },
+
+  //Doc for translation
+  getDocxForTranslation(file : ArrayBuffer, lan : string, lan2 : string) : Promise<File> {
+    return ipcRenderer.invoke("getDocxForTranslation", file, lan, lan2);
+  },
+
+  //Doc for translation
+  getPdfForTranslation(file : ArrayBuffer, lan : string, lan2 : string) : Promise<File> {
+    return ipcRenderer.invoke("getPdfForTranslation", file, lan, lan2);
+  },
+
   //Send quality string
   qualitySettings(quality: string){
     ipcRenderer.send("qualitySettings", quality)
   },
 
+  //Grammar Settings
   grammarSettings(grammar: boolean)
   {
     ipcRenderer.send("grammarSettings", grammar)
   },
-  
+
+  //Back to home
   backToHome()
   {
     ipcRenderer.send("backToHome");

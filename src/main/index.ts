@@ -81,54 +81,96 @@ subWindow.loadFile(join(__dirname,  "../renderer/index.html"), {hash: "/Seperate
   })
 })
 
-
+//Sends the text
 ipcMain.on("sendText", (_event, message : string)=> {
   subWindow?.webContents.send("retrieveText", message)
 })
 
-
+//Quality Settings
 ipcMain.on("qualitySettings", (_event, q : string)=>{
   quality = q;
 })
 
-
+//Grammar settings
 ipcMain.on("grammarSettings", (_event, g : boolean)=>{
   grammar = g;
 })
 
+//Closes the window
 ipcMain.on("closeWindow", (event)=>{
     BrowserWindow.fromWebContents(event.sender)?.close();
 })
 
+//Changes the language
 ipcMain.on("changeLanguages", async (_event, lan1 : string, lan2 : string)=>{
   await editLanguages(lan1, lan2);
 })
 
+//Reads the language
 ipcMain.handle("readLanguages", async(_event)=>{
   const file = await fs.readFile("src/main/Data/languages.json", "utf8");
   return JSON.parse(file);
 })
 
+//Gets the camera version
 ipcMain.handle("getCameraVersion", async(_event)=>{
   const file = await fs.readFile("src/main/Data/SubScanSettings.json", "utf8");
   const getSettings = JSON.parse(file);
   return getSettings["type_of_lens"];
 })
 
+//Gets the text results
+ipcMain.handle("getTextResults", async(_event, text : string, lan1 : string, lan2 : string)=>{
+  try
+  {
+    //Gets the data type
+    const formData = new FormData();
+    //Appends the data
+    formData.append("text", text);
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
 
-ipcMain.handle("getTextResults", async(_event, image : ArrayBuffer, lan1 : string, lan2 : string)=>{
+    //Gets the translated language
+    const response = await fetch("http://localhost:8000/getTextResult", {
+      method: "POST",
+      body: formData
+    })
+
+    //Checks if their was any issues
+    if(!response.ok)
+    {
+      throw new Error(await response.text());
+    }
+    else
+    {
+      //Returns the translated text
+      const data = await response.json();
+      return data["results"];
+    }
+  }
+  catch(err)
+  {
+    console.log(err);
+    return undefined;
+  }
+})
+
+
+ipcMain.handle("getTextImageResults", async(_event, image : ArrayBuffer, lan1 : string, lan2 : string)=>{
   try
   {
     
     //Gets the data type
     const formData = new FormData();
     const newImage = new Blob([image], {"type": "image/png"});
+
     //Quality
     formData.append("image", newImage, "screenshot.png");
     formData.append("lan1", lan1);
     formData.append("lan2", lan2);
     formData.append("quality", quality);
     formData.append("grammar", String(grammar));
+
     //Loading Screen
     subWindow?.webContents.send("retrieveText", ".....")
     //Gets the response
@@ -143,6 +185,7 @@ ipcMain.handle("getTextResults", async(_event, image : ArrayBuffer, lan1 : strin
     }
     else
     {
+      //Returns the translated text
       const data = await response.json();
       return data["results"];
     }
@@ -150,8 +193,84 @@ ipcMain.handle("getTextResults", async(_event, image : ArrayBuffer, lan1 : strin
   catch(err)
   {
     console.log(err);
+    return undefined;
   }
 })
+
+ipcMain.handle("getDocxForTranslation", async(_event, file : ArrayBuffer, lan1 : string, lan2 : string)=>{
+  try
+  {
+    
+    //Gets the data type
+    const formData = new FormData();
+    const getDocOrDocx = new Blob([file], {"type": 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    //Sets the form
+    formData.append("file_data", getDocOrDocx, "document.docx");
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+
+    //Gets the response
+    const response = await fetch("http://localhost:8000/docxTranslation", {
+      method: "POST",
+      body: formData
+    });
+
+    if(!response.ok)
+    {
+      throw new Error(await response.text());
+    }
+    else
+    {
+      
+      //Returns the arrayBuffer 
+      return await response.arrayBuffer();
+    }
+  }
+  catch(err)
+  {
+    console.log(err);
+    return undefined
+  }
+})
+
+
+ipcMain.handle("getPdfForTranslation", async(_event, file : ArrayBuffer, lan1 : string, lan2 : string)=>{
+  try
+  {
+    
+    //Gets the data type
+    const formData = new FormData();
+    const getDocOrDocx = new Blob([file], {"type": 'application/pdf'});
+    //Sets the form
+    formData.append("file_data", getDocOrDocx, "document.pdf");
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+
+    //Gets the response
+    const response = await fetch("http://localhost:8000/pdfTranslation", {
+      method: "POST",
+      body: formData
+    });
+
+    if(!response.ok)
+    {
+      throw new Error(await response.text());
+    }
+    else
+    {
+      
+      //Returns the arrayBuffer 
+      return await response.arrayBuffer();
+    }
+  }
+  catch(err)
+  {
+    console.log(err);
+    return undefined
+  }
+})
+
+
 
 ipcMain.on("backToHome", async(_event)=>{
   win?.webContents.send("backToMainScreen");
