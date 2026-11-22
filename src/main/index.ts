@@ -240,14 +240,100 @@ ipcMain.handle("getPdfForTranslation", async(_event, file : ArrayBuffer, lan1 : 
     
     //Gets the data type
     const formData = new FormData();
-    const getDocOrDocx = new Blob([file], {"type": 'application/pdf'});
+    const getPdf = new Blob([file], {"type": 'application/pdf'});
     //Sets the form
-    formData.append("file_data", getDocOrDocx, "document.pdf");
+    formData.append("file_data", getPdf, "document.pdf");
     formData.append("lan1", lan1);
     formData.append("lan2", lan2);
 
     //Gets the response
     const response = await fetch("http://localhost:8000/pdfTranslation", {
+      method: "POST",
+      body: formData
+    });
+
+    if(!response.ok)
+    {
+      throw new Error(await response.text());
+    }
+    else
+    {
+      
+      //Returns the arrayBuffer 
+      return await response.arrayBuffer();
+    }
+  }
+  catch(err)
+  {
+    console.log(err);
+    return undefined
+  }
+})
+
+
+ipcMain.handle("getImgForTranslation", async(_event, file : ArrayBuffer, lan1 : string, lan2 : string, type_of_image: string)=>{
+  try
+  {
+    //Gets the data type
+    const formData = new FormData();
+    let getImg;
+    if(type_of_image == "png")
+    {
+      getImg = new Blob([file], {"type": 'image/png'});
+    
+      formData.append("file_data", getImg, "document.png");
+    }
+    else
+    {
+      getImg = new Blob([file], {"type": 'image/jpeg'});
+        //Sets the form
+      formData.append("file_data", getImg, "document.jpg");
+    }
+  
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+    formData.append("type_of_image", type_of_image);
+
+    //Gets the response
+    const response = await fetch("http://localhost:8000/imgTranslation", {
+      method: "POST",
+      body: formData
+    });
+
+    if(!response.ok)
+    {
+      throw new Error(await response.text());
+    }
+    else
+    {
+      
+      //Returns the translated text
+      const data = await response.json();
+      return data["results"];
+    }
+  }
+  catch(err)
+  {
+    console.log(err);
+    return undefined
+  }
+})
+
+
+ipcMain.handle("getWavForTranslation", async(_event, file : ArrayBuffer, lan1 : string, lan2 : string)=>{
+  try
+  {
+    
+    //Gets the data type
+    const formData = new FormData();
+    const getWav = new Blob([file], {"type": 'audio/wav'});
+    //Sets the form
+    formData.append("file_data", getWav, "document.wav");
+    formData.append("lan1", lan1);
+    formData.append("lan2", lan2);
+
+    //Gets the response
+    const response = await fetch("http://localhost:8000/wavTranslation", {
       method: "POST",
       body: formData
     });

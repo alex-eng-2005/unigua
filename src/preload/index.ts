@@ -68,9 +68,19 @@ const api = {
     return ipcRenderer.invoke("getDocxForTranslation", file, lan, lan2);
   },
 
-  //Doc for translation
+  //PDF for translation
   getPdfForTranslation(file : ArrayBuffer, lan : string, lan2 : string) : Promise<File> {
     return ipcRenderer.invoke("getPdfForTranslation", file, lan, lan2);
+  },
+
+  //PDF for translation
+  getImgForTranslation(file : ArrayBuffer, lan : string, lan2 : string, type_of_image: string) : Promise<File> {
+    return ipcRenderer.invoke("getImgForTranslation", file, lan, lan2, type_of_image);
+  },
+
+  //PDF for translation
+  getWavForTranslation(file : ArrayBuffer, lan : string, lan2 : string) : Promise<File> {
+    return ipcRenderer.invoke("getWavForTranslation", file, lan, lan2);
   },
 
   //Send quality string

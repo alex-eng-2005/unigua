@@ -2,8 +2,7 @@ import "../../assets/Home/Home.css"
 import subtitleImg from "../../assets/imgs/sub.png";
 import soundImg from "../../assets/imgs/Sound-icon.jpg";
 import { useNavigate } from "react-router-dom"
-import docAndDocxEditor from "../docAndDocxEditor/docAndDocxEditor";
-import PDFTranslator from "../PDFTranslator/PDFTranslator";
+
 
 export default function Home()
 {
@@ -23,6 +22,12 @@ export default function Home()
     }
     const PDFTranslator = () => {
         navigate("/pdfTranslator")
+    }
+    const ImageTranslator = () => {
+        navigate("/imageTranslator")
+    }
+    const AudioTranslator = () => {
+        navigate("/audioTranslator")
     }
     return (
     <>
@@ -59,13 +64,13 @@ export default function Home()
                     <p>PDF Translator</p>
                 </div>
                 <div id="optionBox">
-                    <button className="optionButton" onClick={()=>PDFTranslator()}>
+                    <button className="optionButton" onClick={()=>ImageTranslator()}>
                         <img className="imgButton" src={subtitleImg} alt="Image Translator"/>
                     </button>
                     <p>Image Translator</p>
                 </div>
                 <div id="optionBox">
-                    <button className="optionButton" onClick={()=>PDFTranslator()}>
+                    <button className="optionButton" onClick={()=>AudioTranslator()}>
                         <img className="imgButton" src={soundImg} alt="Audio Translator"/>
                     </button>
                     <p>Audio Translator</p>

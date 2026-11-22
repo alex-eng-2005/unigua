@@ -16,7 +16,9 @@ interface API {
   getTextResults(text : string, lan : string, lan2 : string); //Sends the text to the ai translator
   getTextImageResults(image : ArrayBuffer, lan : string, lan2 : string); //Sends the image to the ai translator
   getDocxForTranslation(file : ArrayBuffer, lan : string, lan2 : string); //Sends the docx file to the ai translator
-  getPdfForTranslation(file : ArrayBuffer, lan : string, lan2 : string); //Sends the docx file to the ai translator
+  getPdfForTranslation(file : ArrayBuffer, lan : string, lan2 : string); //Sends the pdf file to the ai translator
+  getImgForTranslation(file : ArrayBuffer, lan : string, lan2 : string, type_of_image: string); //Sends the img file to the ai translator
+  getWavForTranslation(file : ArrayBuffer, lan : string, lan2 : string); //Sends the wav file to the ai translator
 }
 
 declare global {

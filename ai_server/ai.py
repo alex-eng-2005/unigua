@@ -14,6 +14,12 @@ from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from paddleocr import PaddleOCR, PaddleOCRVL
 from transformers import AutoTokenizer, M2M100Tokenizer, pipeline, AutoModelForSeq2SeqLM
+import numpy as np
+from scipy.io.wavfile import write
+from faster_whisper import WhisperModel
+from gtts import gTTS
+from pydub import AudioSegment
+import soundfile as sf
 from docx import Document
 
 #Reads the ocrSupportedModel
@@ -61,7 +67,8 @@ for language, lan in tesSupported.items():
 
 #A more conherent model for different languages
 ocr6_model = PaddleOCR(device="cpu", text_detection_model_name="PP-OCRv6_small_det", text_recognition_model_name="PP-OCRv6_small_rec", cpu_threads=16, enable_mkldnn=False)
-
+#Audio Model
+audio_model = WhisperModel("small", device="cpu", compute_type="int8")
 #API to connect from the API
 app = FastAPI()
 #Models name
@@ -145,14 +152,106 @@ def translation_results(text, setting, lang_1, lang_2, lan2):
         match(setting):
             #Fast settings
             case "Fast":
-                return translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 4, 0)
+                return translationAI(text, lang_1, lang_2, tokenizer_subtitle, model_translator, 4, 1)
             #Consice settings
             case "Concise":
-                return translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 0)
+                return translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 1)
             #Deep settings
             case "Deep":
-                new_translation = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 0)
+                new_translation = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 1)
                 return fix_grammar(new_translation, lan2)
+    
+#Translated pdf
+def translate_pdf(pdf, lang_1, lang_2):
+     #For each page in the pdf
+        for page in pdf:
+            replacements = []
+            #Blocks
+            blocks = page.get_text("dict")["blocks"]
+            for block in blocks:
+                if "lines" not in block:
+                    continue
+                #Line
+                for line in block["lines"]:
+                    #Span
+                    spans = line["spans"]
+                    if not spans:
+                        continue
+                    #Checks for the original
+                    original = "".join(s["text"] for s in spans)
+                    print(original)
+                    #Checks if there is not a original strip
+                    if not original.strip():
+                        continue
+                    
+                    #Translates the text
+                    translated = translationAI(original, lang_1, lang_2, tokenizer_scanner, model_scanner, 8, 1.1)
+                    #Rectangle
+                    rect = fitz.Rect(line["bbox"])
+                    #font size
+                    font_size = spans[0]["size"]
+                    #Color
+                    color_value = spans[0]["color"]
+                    if isinstance(color_value, tuple):
+                        rgb = tuple(value / 255 if value > 1 else value for value in color_value)
+                    else:
+                        rgb = (
+                            ((color_value >> 16) & 255) / 255,
+                            ((color_value >> 8) & 255) / 255,
+                            (color_value & 255) / 255
+                        )
+                                
+                    replacements.append({
+                        "rect": rect,
+                        "text": translated,
+                        "size": font_size,
+                        "color": rgb
+                    })
+                    
+            #Remove the original text
+            for item in replacements:
+                page.add_redact_annot(
+                    item["rect"],
+                    fill=False,
+                    cross_out=False
+                )
+                
+            #Replacements
+            if replacements:
+                page.apply_redactions(
+                    images=0,
+                    graphics=0,
+                    text=0
+                )
+            #Insert translated text
+            for item in replacements:
+                rect = item["rect"]
+                
+                #Allow extra vertical space
+                target = fitz.Rect(
+                    rect.x0,
+                    rect.y0,
+                    rect.x1,
+                    rect.y1 + 45
+                )
+                
+                #Results insert
+                result = page.insert_textbox(
+                    target,
+                    item["text"],
+                    fontsize=item["size"],
+                    fontname="helv",
+                    color=item["color"]
+                )
+    
+                if result < 0:
+                    print("Text did not fit:", item["text"])
+        #Saves the doc as an output stream
+        output_stream = BytesIO()
+        pdf.save(output_stream)
+        output_stream.seek(0)
+        
+        return output_stream
     
 #Reads the translated json
 def lang():
@@ -226,6 +325,49 @@ async def setImage(image : UploadFile = File(...)):
     img = cv2.imdecode(np_buffer, cv2.IMREAD_COLOR)
     return img
 
+#array_to_wav_and_text
+def array_to_wav_and_text(audio_array, lan, sample_rate=16000):
+    #Converts the input into a NumPy Array
+    audio_array = np.asarray(audio_array)
+    
+    #Convert the int16 audio to a float audio
+    if audio_array.dtype == np.int16:
+        audio_array = audio_array.astype(np.float32) / 32768
+    
+    #Make sure it is float32
+    audio_array = audio_array.astype(np.float32)
+
+    #Transcribe
+    segments, info = audio_model.transcribe(audio_array, language=lan, task="transcribe")
+    
+    #Combine the text
+    text = " ".join(segment.text for segment in segments).strip()
+    
+    return text
+
+#From text to audio
+def text_to_audio_stream(text, lang):
+    #Convert text to mp3 in memory
+    mp3_buffer = BytesIO()
+    
+    gTTS(text=text, lang=lang).write_to_fp(mp3_buffer)
+    mp3_buffer.seek(0)
+    
+    #Read the audio
+    audio = AudioSegment.from_file(mp3_buffer, format="mp3")
+    
+    #Convert to mono 16 khz 16-but
+    audio = audio.set_channels(1)
+    audio = audio.set_frame_rate(16000)
+    audio = audio.set_channels(2)
+    
+    # Convert to stream
+    wav_stream = BytesIO()
+    audio.export(wav_stream, format="wav")
+    wav_stream.seek(0)
+    
+    return wav_stream
+    
 @app.post("/pdfTranslation")
 async def pdfTranslation(file_data: UploadFile = File(...), lan1 : str = Form(...), lan2 : str = Form(...)):
     #Json
@@ -239,93 +381,7 @@ async def pdfTranslation(file_data: UploadFile = File(...), lan1 : str = Form(..
     #Gets the fitz
     pdf = fitz.open(stream=pdf_bytes, filetype="pdf")
     
-    #For each page in the pdf
-    for page in pdf:
-        replacements = []
-        #Blocks
-        blocks = page.get_text("dict")["blocks"]
-        for block in blocks:
-            if "lines" not in block:
-                continue
-            #Line
-            for line in block["lines"]:
-                #Span
-                spans = line["spans"]
-                if not spans:
-                    continue
-                #Checks for the original
-                original = "".join(s["text"] for s in spans)
-                print(original)
-                #Checks if there is not a original strip
-                if not original.strip():
-                    continue
-                
-                #Translates the text
-                translated = translationAI(original, lang_1, lang_2, tokenizer_scanner, model_scanner, 8, 1.1)
-                #Rectangle
-                rect = fitz.Rect(line["bbox"])
-                #font size
-                font_size = spans[0]["size"]
-                #Color
-                color_value = spans[0]["color"]
-                if isinstance(color_value, tuple):
-                    rgb = tuple(value / 255 if value > 1 else value for value in color_value)
-                else:
-                    rgb = (
-                        ((color_value >> 16) & 255) / 255,
-                        ((color_value >> 8) & 255) / 255,
-                        (color_value & 255) / 255
-                    )
-                            
-                replacements.append({
-                    "rect": rect,
-                    "text": translated,
-                    "size": font_size,
-                    "color": rgb
-                })
-                
-        #Remove the original text
-        for item in replacements:
-            page.add_redact_annot(
-                item["rect"],
-                fill=False,
-                cross_out=False
-            )
-            
-        #Replacements
-        if replacements:
-            page.apply_redactions(
-                images=0,
-                graphics=0,
-                text=0
-            )
-        #Insert translated text
-        for item in replacements:
-            rect = item["rect"]
-            
-            #Allow extra vertical space
-            target = fitz.Rect(
-                rect.x0,
-                rect.y0,
-                rect.x1,
-                rect.y1 + 45
-            )
-            
-            #Results insert
-            result = page.insert_textbox(
-                target,
-                item["text"],
-                fontsize=item["size"],
-                fontname="helv",
-                color=item["color"]
-            )
-
-            if result < 0:
-                print("Text did not fit:", item["text"])
-    #Saves the doc as an output stream
-    output_stream = BytesIO()
-    pdf.save(output_stream)
-    output_stream.seek(0)
+    output_stream = translate_pdf(pdf, lang_1, lang_2)
     
     #Returns the pdf back to the api
     return StreamingResponse(
@@ -370,6 +426,56 @@ async def docxTranslation(file_data: UploadFile = File(...), lan1 : str = Form(.
         }
     )
 
+@app.post("/imgTranslation")
+async def imgTranslation(file_data : UploadFile = Form(...), lan1 : str = Form(...), lan2 : str = Form(...), type_of_image : str = Form(...)):
+    #Json
+    user_lan = lang() 
+    #Language 1
+    lang_1 = user_lan[lan1]
+    #Language 2
+    lang_2 = user_lan[lan2]
+    
+    #Sets the image
+    img = await setImage(file_data)
+    
+    #The results predict the image to find out what it is saying
+    text = getPredictedLanguage(lang_1, img, False)
+    
+    #Results
+    results = translation_results(text, "Concise", lang_1, lang_2, lan2)
+  
+    #Translation
+    if type_of_image == "png":
+        results = "PNG: " + str(results)
+    else:
+        results = "JPG: " + str(results)
+    #Test code
+    return {"language_scanned": text, "results": results}
+
+@app.post("/wavTranslation")
+async def wavTranslation(file_data : UploadFile = Form(...), lan1 : str = Form(...), lan2 : str = Form(...)):
+     #Json
+    user_lan = lang() 
+    #Language 1
+    lang_1 = user_lan[lan1]
+    #Language 2
+    lang_2 = user_lan[lan2]
+    #Reads the bytes
+    file_bytes = await file_data.read()
+    #Transforms 
+    audio_array, sample_rate = sf.read(BytesIO(file_bytes), dtype="float32")
+    #Audio wav file to text
+    text = array_to_wav_and_text(audio_array, lang_1)
+    
+    #Translated
+    translated_text = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 8, 1.1)
+
+    #Wav stream
+    wav_stream = text_to_audio_stream(translated_text, lang_2)
+    
+    return StreamingResponse(wav_stream, media_type="audio/wav", headers={
+        "Content-Disposition": "inline; filename=translated.wav"
+    })
 @app.post("/getTextResult")
 async def getTextResult(text : str = Form(...), lan1 : str = Form(...), lan2 : str = Form(...)):
     #Json
