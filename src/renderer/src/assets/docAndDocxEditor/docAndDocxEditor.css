@@ -5,14 +5,14 @@
     box-sizing: border-box;
     margin: 0px;
     padding: 0px;
-    background-color: white;
+    background: linear-gradient(#aaefdf, #b4fc92);
     -webkit-app-region: drag;
 }
 #menu
 {
   display: flex;
   justify-content: flex-end;
-  background-color: rgb(127, 125, 125);
+  background-color: #9ee37d;
   width: 100%;
   height: 10vh;
   font-family: Arial, Helvetica, sans-serif;
@@ -23,8 +23,8 @@
 {
   -webkit-app-region: no-drag;
     cursor: pointer;
-    background-color: yellow;
-    border: 3px solid yellow;
+    background-color: #cffcff;
+    border: 3px solid #cffcff;
     font-family: Arial, Helvetica, sans-serif;
     font-weight: bold;
     padding: 10px;
@@ -32,8 +32,8 @@
 
 #settingButton:hover, #homeButton:hover
 {
-  background-color: lightblue;
-  border: 3px solid lightblue;
+  background-color: #c0fbff;
+  border: 3px solid #c0fbff;
 }
 
 #inputFile
@@ -54,12 +54,12 @@
   width: 100%;
   height: 200px;
   cursor: pointer;
-  background-color: lightgoldenrodyellow;
+  background: linear-gradient(#cffcff, #aaefdf);
   font-weight: bold;
 }
 
 #inputFile::file-selector-button:hover {
-  background-color: rgb(250, 250, 166);
+  background: linear-gradient(#cffcff, #aaefdf);
 }
 
 #fileSubmitSection
@@ -77,10 +77,10 @@
     height: 100px;
     margin-left: auto;
     margin-right: auto;
-    background-color: aliceblue;
+    background-color: #cffcff;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 30px;
-    border: 5px solid aliceblue;
+    border: 5px solid #cffcff;
     -webkit-app-region: no-drag;
     cursor: pointer
 }
