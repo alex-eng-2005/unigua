@@ -14887,7 +14887,11 @@ function useViewTransitionState(to, { relative } = {}) {
   return matchPath(path.pathname, nextPath) != null || matchPath(path.pathname, currentPath) != null;
 }
 const subtitleImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAACXBIWXMAAAsTAAALEwEAmpwYAAAB0ElEQVR4nO2dO04jURQFK4I9wLrMIvjMGiaclQ0Q8FkFxAjyi7rVRgYBIsDcY16VVAnSk0671BiRPBAREREREeljHzgDLoAnoJRt+rR81qfA3tsYh8BtwMga1JulwcubYQzavV6/KX8CxiizJ1OQy4Ahyuz5FOQxYIgyO7VoH6G8sn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2AYpAKtn2A8j1B5HMMEoZBwjBIGAYJwyBhGCQMg4QRF+QIuH/n3PSz1QDnKy3Iew+z+VC//XylBfE8Btml8wYh67xBGDzIZ1+KdwOcr7Qgqw8e6u6Lfzaudvx8XJDRKYNkYZAwDBKGQcIwSBgGCcMgowfZdf9t+YM1CNuJYhCyohiErCgGISuKQciKYhCyohiErCgGISuKQcjxr0EY3vYByusgXixJjA8sV0h3D1Fm/7Pcod49RJk9Xl/ffRMwpgb3avOi+8PlPu/uUTVwjIO3/7PZW+7znn6P+UXP1n1cPuvjzTdDRERERESEH+YZ+o2XzAMjKVsAAAAASUVORK5CYII=";
-const soundImg = "" + new URL("Sound-icon-Dlj44ihM.jpg", import.meta.url).href;
+const docx_icon = "" + new URL("docx_icon-BhPcejl1.png", import.meta.url).href;
+const pdf_icon = "" + new URL("pdf-icon-DRnJaAAA.png", import.meta.url).href;
+const wav_icon = "" + new URL("wav-icon-Djg4Xsj6.png", import.meta.url).href;
+const image_icon = "" + new URL("image-icon-B_dqEVaG.jpg", import.meta.url).href;
+const translator_icon = "" + new URL("translator-icon-BdbYtAHb.png", import.meta.url).href;
 function Home() {
   const navigate = useNavigate();
   const navigateToSubtitles = () => {
@@ -14911,7 +14915,7 @@ function Home() {
   };
   return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "body", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "topScreen", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "exit", onClick: () => window.api.closeWindow(), children: "Exit" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "exiting", onClick: () => window.api.closeWindow(), children: "Exit" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "settings", onClick: () => navigate("/settings"), children: "Settings" })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "title", children: "Unigua" }),
@@ -14921,23 +14925,23 @@ function Home() {
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Automatic Scanner" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => navigateToLanguageConverter(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: subtitleImg, alt: "Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => navigateToLanguageConverter(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: translator_icon, alt: "Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Translator" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => docAndDocxEditor2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: subtitleImg, alt: "DOCX Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => docAndDocxEditor2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: docx_icon, alt: "DOCX Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "DOCX Translator" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => PDFTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: subtitleImg, alt: "PDF Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => PDFTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: pdf_icon, alt: "PDF Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "PDF Translator" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => ImageTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: subtitleImg, alt: "Image Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => ImageTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: image_icon, alt: "Image Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Image Translator" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => AudioTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: soundImg, alt: "Audio Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => AudioTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: wav_icon, alt: "Audio Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Audio Translator" })
       ] })
     ] })
