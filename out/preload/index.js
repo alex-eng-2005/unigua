@@ -54,9 +54,17 @@ const api = {
   getDocxForTranslation(file, lan, lan2) {
     return electron.ipcRenderer.invoke("getDocxForTranslation", file, lan, lan2);
   },
-  //Doc for translation
+  //PDF for translation
   getPdfForTranslation(file, lan, lan2) {
     return electron.ipcRenderer.invoke("getPdfForTranslation", file, lan, lan2);
+  },
+  //PDF for translation
+  getImgForTranslation(file, lan, lan2, type_of_image) {
+    return electron.ipcRenderer.invoke("getImgForTranslation", file, lan, lan2, type_of_image);
+  },
+  //PDF for translation
+  getWavForTranslation(file, lan, lan2) {
+    return electron.ipcRenderer.invoke("getWavForTranslation", file, lan, lan2);
   },
   //Send quality string
   qualitySettings(quality) {

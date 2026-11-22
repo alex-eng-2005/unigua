@@ -14903,6 +14903,12 @@ function Home() {
   const PDFTranslator2 = () => {
     navigate("/pdfTranslator");
   };
+  const ImageTranslator2 = () => {
+    navigate("/imageTranslator");
+  };
+  const AudioTranslator2 = () => {
+    navigate("/audioTranslator");
+  };
   return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "body", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "topScreen", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "exit", onClick: () => window.api.closeWindow(), children: "Exit" }),
@@ -14927,11 +14933,11 @@ function Home() {
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "PDF Translator" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => PDFTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: subtitleImg, alt: "Image Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => ImageTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: subtitleImg, alt: "Image Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Image Translator" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "optionBox", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => PDFTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: soundImg, alt: "Audio Translator" }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "optionButton", onClick: () => AudioTranslator2(), children: /* @__PURE__ */ jsxRuntimeExports.jsx("img", { className: "imgButton", src: soundImg, alt: "Audio Translator" }) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Audio Translator" })
       ] })
     ] })
@@ -15340,6 +15346,132 @@ function PDFTranslator() {
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "submitSection", children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "submit", onClick: getTranslatedFile, children: "Submit" }) })
   ] }) });
 }
+function ImageTranslator() {
+  const navigate = useNavigate();
+  const [img, setPNG] = reactExports.useState(null);
+  const [jpg, setJPG] = reactExports.useState(null);
+  const [l1, setL1] = reactExports.useState("");
+  const [l2, setL2] = reactExports.useState("");
+  reactExports.useEffect(() => {
+    async function loadLanguages() {
+      const mainLan = await window.api.readLanguages();
+      const l12 = mainLan["lan1"];
+      const l22 = mainLan["lan2"];
+      setL1(l12);
+      setL2(l22);
+    }
+    loadLanguages();
+  });
+  const getImg = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    if (file) {
+      if (file.type == "image/jpeg") {
+        setJPG(file);
+      } else {
+        setPNG(file);
+      }
+    }
+  };
+  const getTranslatedFile = async () => {
+    if (img != null || jpg != null) {
+      let translatedImg;
+      if (img != null) {
+        const imgArrayBuffer = await img.arrayBuffer();
+        translatedImg = await window.api.getImgForTranslation(imgArrayBuffer, l1, l2, "png");
+      } else if (jpg != null) {
+        const imgArrayBuffer = await jpg.arrayBuffer();
+        translatedImg = await window.api.getImgForTranslation(imgArrayBuffer, l1, l2, "jpg");
+      }
+      const translatedFile = new Blob([translatedImg], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(translatedFile);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "translated.txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "languageBody", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "menu", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "settingButton", onClick: () => navigate("/settings"), children: "Settings" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "homeButton", onClick: () => navigate("/"), children: "Home" })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "fileSubmitSection", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "input",
+      {
+        type: "file",
+        accept: ".png, .jpg",
+        id: "inputFile",
+        onChange: (e) => {
+          getImg(e);
+        }
+      }
+    ) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "submitSection", children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "submit", onClick: getTranslatedFile, children: "Submit" }) })
+  ] }) });
+}
+function AudioTranslator() {
+  const navigate = useNavigate();
+  const [audio, setAudio] = reactExports.useState(null);
+  const [l1, setL1] = reactExports.useState("");
+  const [l2, setL2] = reactExports.useState("");
+  reactExports.useEffect(() => {
+    async function loadLanguages() {
+      const mainLan = await window.api.readLanguages();
+      const l12 = mainLan["lan1"];
+      const l22 = mainLan["lan2"];
+      setL1(l12);
+      setL2(l22);
+    }
+    loadLanguages();
+  });
+  const getAudio = (e) => {
+    setAudio(e.target.files?.[0] ?? null);
+  };
+  const getTranslatedFile = async () => {
+    if (audio != null) {
+      const pdfArrayBuffer = await audio.arrayBuffer();
+      const translatedPdf = await window.api.getWavForTranslation(pdfArrayBuffer, l1, l2);
+      const translatedFile = new File(
+        [translatedPdf],
+        "translated.wav",
+        {
+          type: "audio/wav"
+        }
+      );
+      const url = URL.createObjectURL(translatedFile);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "translated.wav";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "languageBody", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { id: "menu", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "settingButton", onClick: () => navigate("/settings"), children: "Settings" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "homeButton", onClick: () => navigate("/"), children: "Home" })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "fileSubmitSection", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "input",
+      {
+        type: "file",
+        accept: ".wav",
+        id: "inputFile",
+        onChange: (e) => {
+          getAudio(e);
+        }
+      }
+    ) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "submitSection", children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { id: "submit", onClick: getTranslatedFile, children: "Submit" }) })
+  ] }) });
+}
 function App() {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(HashRouter, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs(Routes, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/", element: /* @__PURE__ */ jsxRuntimeExports.jsx(Home, {}) }),
@@ -15349,8 +15481,8 @@ function App() {
     /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/languageConverter", element: /* @__PURE__ */ jsxRuntimeExports.jsx(LanguageConverter, {}) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/docAndDocxEditor", element: /* @__PURE__ */ jsxRuntimeExports.jsx(docAndDocxEditor, {}) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/pdfTranslator", element: /* @__PURE__ */ jsxRuntimeExports.jsx(PDFTranslator, {}) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/imageDownload", element: /* @__PURE__ */ jsxRuntimeExports.jsx(PDFTranslator, {}) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/audioDownload", element: /* @__PURE__ */ jsxRuntimeExports.jsx(PDFTranslator, {}) })
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/imageTranslator", element: /* @__PURE__ */ jsxRuntimeExports.jsx(ImageTranslator, {}) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Route, { path: "/audioTranslator", element: /* @__PURE__ */ jsxRuntimeExports.jsx(AudioTranslator, {}) })
   ] }) });
 }
 clientExports.createRoot(document.getElementById("root")).render(
