@@ -41,17 +41,20 @@ export default function LanguageConverter()
    
         <>
         <div id="languageBody">
+            {/* Setting button and home button */}
             <div id="menu">
                 <button id="settingButton" onClick={() => navigate("/settings")}>Settings</button>
                 <button id="homeButton" onClick={() => navigate("/")}>Home</button>
             </div>
             <div>
+                {/* Section where the user types in their sentence in their language */}
                 <div id="enterHeader">
                     <p id="lan1">{l1}</p>
                     <button id="enterInput" onClick={() => sendText((document.getElementById("inputLanguage") as HTMLTextAreaElement | null)?.value ?? "")}>Enter</button>
                 </div>
                 <textarea id="inputLanguage"></textarea>
             </div>
+            {/* Section to output translated sentence */}
             <div>   
                 <p id="lan2">{l2}</p>
                 <div id="output">{output}</div>

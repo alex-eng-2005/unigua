@@ -174,7 +174,7 @@ ipcMain.handle("getTextImageResults", async(_event, image : ArrayBuffer, lan1 : 
     //Loading Screen
     subWindow?.webContents.send("retrieveText", ".....")
     //Gets the response
-    const response = await fetch("http://localhost:8000/determine", {
+    const response = await fetch("http://localhost:8000/scannerTranslation", {
       method: "POST",
       body: formData
     });

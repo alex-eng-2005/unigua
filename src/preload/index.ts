@@ -12,15 +12,19 @@ const api = {
     ipcRenderer.send("showSubTextScreen")
   },
   
+  //Sends text
   sendText(message : string) : void {
     ipcRenderer.send("sendText", message)
   },
 
+  //Retrieves the text
   onRetrieveText: (callback: (text: string) => void) => {
       ipcRenderer.on("retrieveText", (_, text) => {
         callback(text);
       });
   },
+
+  //Goes back to the home screen when the user quit
   backToMainScreen: (callback: () => void) => {
     const listener = () => callback();
     ipcRenderer.on("backToMainScreen", () => {

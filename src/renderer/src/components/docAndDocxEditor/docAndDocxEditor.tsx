@@ -34,11 +34,14 @@ export default function docAndDocxEditor()
     //Download file
     const getTranslatedFile = async () =>
     {
+        //Checks if the user has a docx file stored
         if(docx != null)
         {
             
+            //Docx to docx array buffer
             const docArrayBuffer = await docx.arrayBuffer();
             const translatedDocOrDocx  = await window.api.getDocxForTranslation(docArrayBuffer, l1, l2);
+            //Gets the translated file
             const translatedFile = new File([translatedDocOrDocx], 
                 "translated-document.docx", 
                 {
@@ -64,10 +67,12 @@ export default function docAndDocxEditor()
     //Doc or Docx Screen
     return (<>
         <div id="languageBody">
+            {/* Menu button */}
             <div id="menu">
                 <button id="settingButton" onClick={() => navigate("/settings")}>Settings</button>
                 <button id="homeButton" onClick={() => navigate("/")}>Home</button>
             </div>
+            {/* Button to store the docx file in */}
             <div id="fileSubmitSection">
                 <input
                 type="file"
@@ -77,8 +82,9 @@ export default function docAndDocxEditor()
                 />
             </div>
             
-            <br></br>
+            <br/>
 
+            {/* Submit button */}
             <div id="submitSection">
                 <button id="submit" onClick={getTranslatedFile}>Submit</button>
             </div>

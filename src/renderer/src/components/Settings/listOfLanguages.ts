@@ -1,6 +1,7 @@
 interface Languages {
     "name": string
 }
+//All The languages
 export const ListOfLanguages: Languages[] = [
     { "name": "Albanian" },
     { "name": "Amharic" },
