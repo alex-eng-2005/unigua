@@ -9,14 +9,17 @@ const api = {
   showSubTextScreen() {
     electron.ipcRenderer.send("showSubTextScreen");
   },
+  //Sends text
   sendText(message) {
     electron.ipcRenderer.send("sendText", message);
   },
+  //Retrieves the text
   onRetrieveText: (callback) => {
     electron.ipcRenderer.on("retrieveText", (_, text) => {
       callback(text);
     });
   },
+  //Goes back to the home screen when the user quit
   backToMainScreen: (callback) => {
     const listener = () => callback();
     electron.ipcRenderer.on("backToMainScreen", () => {

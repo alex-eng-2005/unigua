@@ -48,9 +48,11 @@ export default function ImageTranslator()
     //Download file
     const getTranslatedFile = async () =>
     {
+        //Checks if the image is either a jpg or a png
         if(img != null || jpg != null)
         {
-            
+
+            //Sends in the image as an array buffer
             let translatedImg;
             if(img != null)
             {
@@ -62,7 +64,8 @@ export default function ImageTranslator()
                 const imgArrayBuffer = await jpg.arrayBuffer();
                 translatedImg  = await window.api.getImgForTranslation(imgArrayBuffer, l1, l2, "jpg");
             }
-
+            
+            //Gets in the image as a text file
             const translatedFile = new Blob([translatedImg], { type: 'text/plain;charset=utf-8' });
             const url = URL.createObjectURL(translatedFile)
             const a = document.createElement("a");

@@ -36,7 +36,10 @@ export default function PDFTranslator()
     {
         if(pdf != null)
         {
-             const pdfArrayBuffer = await pdf.arrayBuffer();
+            //Sends in the pdf translation
+            const pdfArrayBuffer = await pdf.arrayBuffer();
+            
+            //Gets the translated pdf back
             const translatedPdf  = await window.api.getPdfForTranslation(pdfArrayBuffer, l1, l2);
             const translatedFile = new File([translatedPdf], 
                 "translated-document.pdf", 
@@ -44,6 +47,7 @@ export default function PDFTranslator()
                     type: "application/pdf"
                 }
             )
+            //Creates the downloaded file of the pdf
             const url = URL.createObjectURL(translatedFile)
             const a = document.createElement("a");
             
@@ -60,13 +64,16 @@ export default function PDFTranslator()
         }
     }
 
-    //Doc or Docx Screen
+    //PDF Screen
     return (<>
+        {/* Setting button and home button */}
         <div id="languageBody">
             <div id="menu">
                 <button id="settingButton" onClick={() => navigate("/settings")}>Settings</button>
                 <button id="homeButton" onClick={() => navigate("/")}>Home</button>
             </div>
+
+            {/* Button to store the pdf file in */}
             <div id="fileSubmitSection">
                 <input
                 type="file"
@@ -77,7 +84,7 @@ export default function PDFTranslator()
             </div>
             
             <br></br>
-
+            {/* Confirms the file */}
             <div id="submitSection">
                 <button id="submit" onClick={getTranslatedFile}>Submit</button>
             </div>

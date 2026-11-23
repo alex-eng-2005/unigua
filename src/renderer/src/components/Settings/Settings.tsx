@@ -36,9 +36,11 @@ export default function Settings()
     return (
     <div className="body">
         <div className="topScreen">
+            {/* Exit Screen */}
             <button className="exit" onClick={()=>window.api.closeWindow()}>Exit</button>
         </div>
 
+        {/* Untranslated Language sentence input */}
         <label htmlFor="option" id="presentLanguage">Put in your untranslated language</label>
         <select id="option" value={firstLan} onChange={(e)=>setFirstLan(e.target.value)}>
             {ListOfLanguages.map(value=>(
@@ -47,6 +49,7 @@ export default function Settings()
         </select>
         <br/>
 
+        {/* Translated Language sentence output */}
          <label htmlFor="option" id="postLanguage">Put in your translated language</label>
         <select  id="option" value={secondLan} onChange={(e)=>setSecondLan(e.target.value)}>
             {ListOfLanguages.map(value=>(
@@ -54,6 +57,7 @@ export default function Settings()
             ))}
         </select>
             <br/>
+        {/* Comfirm button */}
         <button className="confirm" onClick={()=>confirmOptions(firstLan, secondLan)}>Confirm</button>
     </div>
     );

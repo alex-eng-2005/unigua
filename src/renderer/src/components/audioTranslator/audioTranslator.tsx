@@ -34,9 +34,11 @@ export default function AudioTranslator()
     //Download file
     const getTranslatedFile = async () =>
     {
+        //Checks if we have an audio file
         if(audio != null)
         {
-             const pdfArrayBuffer = await audio.arrayBuffer();
+            //Gets the audio buttton
+            const pdfArrayBuffer = await audio.arrayBuffer();
             const translatedPdf  = await window.api.getWavForTranslation(pdfArrayBuffer, l1, l2);
             const translatedFile = new File([translatedPdf], 
                 "translated.wav", 
@@ -44,6 +46,7 @@ export default function AudioTranslator()
                     type: "audio/wav"
                 }
             )
+            //Gets the audio file
             const url = URL.createObjectURL(translatedFile)
             const a = document.createElement("a");
             
@@ -60,13 +63,16 @@ export default function AudioTranslator()
         }
     }
 
-    //Doc or Docx Screen
+    //Wav Screen
     return (<>
         <div id="languageBody">
+            {/* Setting button and home button */}
             <div id="menu">
                 <button id="settingButton" onClick={() => navigate("/settings")}>Settings</button>
                 <button id="homeButton" onClick={() => navigate("/")}>Home</button>
             </div>
+
+            {/* Button to store the wav file in */}
             <div id="fileSubmitSection">
                 <input
                 type="file"
@@ -78,6 +84,7 @@ export default function AudioTranslator()
             
             <br></br>
 
+            {/* Submit button */}
             <div id="submitSection">
                 <button id="submit" onClick={getTranslatedFile}>Submit</button>
             </div>

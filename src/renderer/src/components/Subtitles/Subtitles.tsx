@@ -1,7 +1,7 @@
 import "../../assets/Subtitles/Subtitles.css"
 import { useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom";
-//let counter = 0;
+
 export default function Subtitles()
 {
     
@@ -152,6 +152,7 @@ export default function Subtitles()
     return (
     <>
     <div className="subtitleBody">
+        {/* Screen itself */}
          <canvas className="screen"  ref={canvasRef} width={500} height={400} style={{visibility: "hidden"}}/>
         <video id="screen-sharing-video" ref={videoRef} autoPlay muted playsInline style={{display: "none"}}></video>
         <br></br>

@@ -1,19 +1,15 @@
 from io import BytesIO
 from PIL import Image
 import cv2
-import docx
 from fastapi.responses import StreamingResponse
 import numpy as np
 import json
 import ctranslate2
-import time
 import tesserocr
-import torch
 import fitz
 from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from paddleocr import PaddleOCR, PaddleOCRVL
-from transformers import AutoTokenizer, M2M100Tokenizer, pipeline, AutoModelForSeq2SeqLM
+from paddleocr import PaddleOCR
+from transformers import  M2M100Tokenizer, pipeline 
 import numpy as np
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
@@ -22,6 +18,11 @@ from pydub import AudioSegment
 import soundfile as sf
 from docx import Document
 
+"""
+--------------------------------------------------------------------
+This section contains all the languages and their encoding
+--------------------------------------------------------------------
+"""
 #Reads the ocrSupportedModel
 with open("./ocrSupport.json", "r", encoding="utf-8") as f:
     ocrSupported = json.load(f)
@@ -65,26 +66,106 @@ for language, lan in tesSupported.items():
     if lan not in tes_supported_models:
         tes_supported_models[lan] = tesserocr.PyTessBaseAPI(lang=lan, path="./tessdata")
 
+"""
+--------------------------------------------------------------------
+This section contains all the ai models and API that are used
+* PaddleOCR
+* Whisper
+* m2m100_1.2
+* m2m100_418M
+* Qwen
+* API
+--------------------------------------------------------------------
+"""
+
 #A more conherent model for different languages
 ocr6_model = PaddleOCR(device="cpu", text_detection_model_name="PP-OCRv6_small_det", text_recognition_model_name="PP-OCRv6_small_rec", cpu_threads=16, enable_mkldnn=False)
 #Audio Model
 audio_model = WhisperModel("small", device="cpu", compute_type="int8")
-#API to connect from the API
-app = FastAPI()
 #Models name
 model_scanner_name = "facebook/m2m100_1.2B"
 model_subtitle_name = "facebook/m2m100_418M"
-
-
+#Model for text generation
+grammar_model = pipeline("text-generation", "Qwen/Qwen3-2B")
 #A tokenizer to split the text into different tokens
 tokenizer_scanner = M2M100Tokenizer.from_pretrained(model_scanner_name)
 tokenizer_subtitle = M2M100Tokenizer.from_pretrained(model_subtitle_name)
-grammar_model = pipeline("text-generation", "Qwen/Qwen3-2B")
 
 #Translator for loading the M2M100 Model
 model_translator = ctranslate2.Translator("./m2m100_418", device="cpu", compute_type="int8")
 #The model with the pretrained data
 model_scanner = ctranslate2.Translator("./m2m100-1.2b-ct2", device="cpu", compute_type="int8")
+#API to connect from the API
+app = FastAPI()
+
+
+"""
+--------------------------------------------------------------------
+This section is all of the ai models translating the language and getting
+the encodings
+--------------------------------------------------------------------
+"""
+#Reads the translated json
+def lang():
+    with open("./translated.json", "r", encoding="utf-8") as file:
+        j = json.load(file)
+    return j
+
+#Translates the data
+def translatesInfo(results):
+    text_results = []
+    #Finds the min score
+    for r in results:
+        #We have both the texts and scores
+        texts = r["rec_texts"]
+        scores = r["rec_scores"]
+        
+        #Loops both the text and the scores together
+        for text, score in zip(texts, scores):
+            #Checks if the score of probaility is greater than 0.80
+            if(score >= 0.80):
+                #Appends it to an list
+                text_results.append(text)
+    #A sentence loops around
+    sentence = " ".join(text_results)
+    #Returns the sentence
+    return sentence
+    
+def fix_grammar(text, target_language):
+    prompt = prompt = [
+        {
+            "role": "system",
+            "content": f"""You are a professional translator.
+
+            Translate the user's text into {target_language}.
+
+            Rules:
+            - Output only the translation in {target_language}.
+            - Do not output English unless English is the target language.
+            - Preserve the original meaning, tone, names, numbers, and formatting.
+            - Make the translation natural and grammatically correct.
+            - Do not explain your reasoning.
+            - Do not use <think> tags.
+            - Return only the translated text."""
+        },
+        {
+            "role": "user",
+            "content": text
+        }
+    ]
+    grammar_language = grammar_model(prompt, 
+                                     max_new_tokens=128,  
+                                    do_sample=False)
+    #Generated language
+    generated_language = grammar_language[0]["generated_text"]
+    
+    #Checks if it is a instance of a list
+    if isinstance(generated_language, list):
+        final_langauge = generated_language[-1]["content"]
+    else:
+        final_langauge = generated_language
+    #Returns the language itself
+    return final_langauge.strip()
 
 #Checks what should be translated
 def getPredictedLanguage(lan, img, isFast=True):
@@ -146,8 +227,6 @@ def translationAI(text, source, target, tokenizer, model, beam_size, repetition_
 def translation_results(text, setting, lang_1, lang_2, lan2):
     #Checks if the length of the text is greater than 0
     if len(text) > 0:
-        #print("This text is larger than 0")
-        #print(setting)
         #Settings option
         match(setting):
             #Fast settings
@@ -161,6 +240,12 @@ def translation_results(text, setting, lang_1, lang_2, lan2):
                 new_translation = translationAI(text, lang_1, lang_2, tokenizer_scanner, model_scanner, 4, 1)
                 return fix_grammar(new_translation, lan2)
     
+"""
+--------------------------------------------------------------------
+This section is decoding the documents into text, and then 
+translating the text
+--------------------------------------------------------------------
+"""
 #Translated pdf
 def translate_pdf(pdf, lang_1, lang_2):
      #For each page in the pdf
@@ -179,7 +264,7 @@ def translate_pdf(pdf, lang_1, lang_2):
                         continue
                     #Checks for the original
                     original = "".join(s["text"] for s in spans)
-                    print(original)
+                    
                     #Checks if there is not a original strip
                     if not original.strip():
                         continue
@@ -246,6 +331,7 @@ def translate_pdf(pdf, lang_1, lang_2):
     
                 if result < 0:
                     print("Text did not fit:", item["text"])
+                    
         #Saves the doc as an output stream
         output_stream = BytesIO()
         pdf.save(output_stream)
@@ -253,68 +339,6 @@ def translate_pdf(pdf, lang_1, lang_2):
         
         return output_stream
     
-#Reads the translated json
-def lang():
-    with open("./translated.json", "r", encoding="utf-8") as file:
-        j = json.load(file)
-    return j
-
-#Translates the data
-def translatesInfo(results):
-    text_results = []
-    #Finds the min score
-    for r in results:
-        #We have both the texts and scores
-        texts = r["rec_texts"]
-        scores = r["rec_scores"]
-        
-        #Loops both the text and the scores together
-        for text, score in zip(texts, scores):
-            #Checks if the score of probaility is greater than 0.80
-            if(score >= 0.80):
-                #Appends it to an list
-                text_results.append(text)
-    #A sentence loops around
-    sentence = " ".join(text_results)
-    print("Word Given: ", sentence)
-    #Returns the sentence
-    return sentence
-    
-def fix_grammar(text, target_language):
-    prompt = prompt = [
-        {
-            "role": "system",
-            "content": f"""You are a professional translator.
-
-            Translate the user's text into {target_language}.
-
-            Rules:
-            - Output only the translation in {target_language}.
-            - Do not output English unless English is the target language.
-            - Preserve the original meaning, tone, names, numbers, and formatting.
-            - Make the translation natural and grammatically correct.
-            - Do not explain your reasoning.
-            - Do not use <think> tags.
-            - Return only the translated text."""
-        },
-        {
-            "role": "user",
-            "content": text
-        }
-    ]
-    grammar_language = grammar_model(prompt, 
-                                     max_new_tokens=128,  
-                                    do_sample=False)
-    #Generated language
-    generated_language = grammar_language[0]["generated_text"]
-    
-    #Checks if it is a instance of a list
-    if isinstance(generated_language, list):
-        final_langauge = generated_language[-1]["content"]
-    else:
-        final_langauge = generated_language
-    #Returns the language itself
-    return final_langauge.strip()
 
 async def setImage(image : UploadFile = File(...)):
     #Reads uploaded image bytes
@@ -368,6 +392,11 @@ def text_to_audio_stream(text, lang):
     
     return wav_stream
     
+"""
+--------------------------------------------------------------------
+This section is where the translation and conversion is worked on
+--------------------------------------------------------------------
+"""
 @app.post("/pdfTranslation")
 async def pdfTranslation(file_data: UploadFile = File(...), lan1 : str = Form(...), lan2 : str = Form(...)):
     #Json
@@ -409,7 +438,6 @@ async def docxTranslation(file_data: UploadFile = File(...), lan1 : str = Form(.
     
     #Edits the paragraph with the translated version
     for paragraph in doc.paragraphs:
-        print(paragraph.text)
         paragraph.text = translationAI(paragraph.text, lang_1, lang_2, tokenizer_scanner, model_scanner, 8, 1.1)
         
     #Saves the doc as an output stream
@@ -489,8 +517,8 @@ async def getTextResult(text : str = Form(...), lan1 : str = Form(...), lan2 : s
     #Returns the translation
     return {"results": results}
 
-@app.post("/determine")
-async def determine(image: UploadFile = File(...), lan1: str = Form(...), lan2: str = Form(...), quality: str = Form(...), grammar: str = Form(...)):
+@app.post("/scannerTranslation")
+async def scannerTranslation(image: UploadFile = File(...), lan1: str = Form(...), lan2: str = Form(...), quality: str = Form(...), grammar: str = Form(...)):
     #First, we set the transition function
     want_grammar = True if grammar == "true" else False
     #Json
